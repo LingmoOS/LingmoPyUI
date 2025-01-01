@@ -12,20 +12,26 @@ from .LingmoRectangle import LingmoRectangle
 from . import LingmoTextStyle
 from . import LingmoTheme
 from . import LingmoTools
-timerDelay=10
+timerDelay=0
 widgetCount=0
 class LingmoAnimation(QVariantAnimation):
-	def __init__(self,obj: object,attr: str):
+	Variable=1
+	Callable=2
+	def __init__(self,obj: object,attr: str,updateType=Variable):
 		super().__init__()
 		self.obj=obj
 		self.attr=attr
 		self.precision=1000
+		self.updateType=updateType
 	def setStartValue(self, value):
 		return super().setStartValue(round(value*self.precision))
 	def setEndValue(self, value):
 		return super().setEndValue(round(value*self.precision))
 	def updateCurrentValue(self, value):
-		self.obj.__setattr__(self.attr,value/self.precision)
+		if self.updateType==self.Variable:
+			self.obj.__setattr__(self.attr,value/self.precision)
+		else:
+			(self.obj.__getattr__(self.attr))(value/self.precision)
 class LingmoFrame(QFrame):
 	def __init__(self,parent=None,show=True):
 		global widgetCount
@@ -328,12 +334,15 @@ class LingmoIconButton(LingmoAbstractButton):
 		self.boxLayout.setContentsMargins(0,0,0,0)
 		self.boxLayout.setSpacing(0)
 		self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+		self.iconColor=QColor()
+		self.iconColorUnsetted=True
+		self.horizontalPadding=8
+		self.verticalPadding=8
 	def updateEvent(self):
 		self.tooltip.setDisabled(self.content==''or self.display!=self.IconOnly)
 		self.tooltip.setContent(self.content)
 		self.text.setText(self.content)
 		self.color=QColor()
-		self.iconColor=QColor()
 		self.textColor=LingmoTheme.instance.fontPrimaryColor
 		if self.isEnabled():
 			if self.isPressed():
@@ -342,10 +351,10 @@ class LingmoIconButton(LingmoAbstractButton):
 				self.color=self.hoverColor
 			else:
 				self.color=self.normalColor
-			self.iconColor=QColor(255,255,255,255)if LingmoTheme.instance.dark() else QColor(0,0,0,255)
+			if self.iconColorUnsetted: self.iconColor=QColor(255,255,255,255)if LingmoTheme.instance.dark() else QColor(0,0,0,255)
 		else:
 			self.color=self.disableColor
-			self.iconColor=QColor(130,130,130,255)if LingmoTheme.instance.dark() else QColor(161,161,161,255)
+			if self.iconColorUnsetted: self.iconColor=QColor(130,130,130,255)if LingmoTheme.instance.dark() else QColor(161,161,161,255)
 		self.icon.setIconColor(self.iconColor)
 		self.icon.setIconSize(self.iconSize)
 		self.text.setText(self.content)
@@ -354,8 +363,8 @@ class LingmoIconButton(LingmoAbstractButton):
 		self.background.addStyleSheet('background-color',self.color.name(QColor.NameFormat.HexArgb))
 		self.text.addStyleSheet('color',self.textColor.name(QColor.NameFormat.HexArgb))
 		self.background.adjustSize()
-		self.background.move(8,8)
-		self.resize(self.background.width()+2*8,self.background.height()+2*8)
+		self.background.move(self.horizontalPadding,self.verticalPadding)
+		self.resize(self.background.width()+2*self.horizontalPadding,self.background.height()+2*self.verticalPadding)
 		self.focusRect.setVisible(self.hasFocus())
 	def setDisplay(self,val):
 		self.display=val
@@ -371,14 +380,18 @@ class LingmoIconButton(LingmoAbstractButton):
 			self.boxLayout.setDirection(QBoxLayout.Direction.TopToBottom)
 	def setIconColor(self,val):
 		self.iconColor=val
+		self.iconColorUnsetted=False
 	def setIconSize(self,val):
 		self.iconSize=val
-	def setIconWidth(self,val):
+	def setIconBorderWidth(self,val):
 		self.icon.resize(val,self.icon.height())
-	def setIconHeight(self,val):
+	def setIconBorderHeight(self,val):
 		self.icon.resize(self.icon.width(),val)
-	def setIconSize(self,width,height):
+	def setIconBorderSize(self,width,height):
 		self.icon.resize(width,height)
+	def setPaddings(self,hori,vert):
+		self.horizontalPadding=hori
+		self.verticalPadding=vert
 class LingmoImageButton(LingmoAbstractButton):
 	def __init__(self,normalImage: str,parent=None,show=True,hoveredImage: str|None = None,pushedImage: str|None = None):
 		super().__init__(parent,show)
@@ -433,29 +446,124 @@ class LingmoRouter(LingmoFrame):
 		super().__init__(parent,show)
 	def updateEvent(self):
 		pass
-class LingmoScrollBar(LingmoFrame):
-	def __init__(self,parent=None,show=True,orientation=Qt.Orientation.Horizontal,color=QColor(159,159,159,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)):
+class LingmoScrollBar(LingmoAbstractButton):
+	def __init__(self,parent=None,target:QWidget =None,show=True,orientation=Qt.Orientation.Horizontal,color=QColor(159,159,159,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)):
 		super().__init__(parent,show)
 		self.orientation=orientation
+		self.target=target
 		self.color=color
 		self.pressedColor=QColor.darker(self.color)if LingmoTheme.instance.dark() else QColor.lighter(self.color)
 		self.minLine=2
 		self.maxLine=6
 		self.position=0
+		self.stepLength=10
+		self.horizontalPadding=15 if self.horizontal()else 3
+		self.verticalPadding=15 if self.vertical else 3
 		self.horiDecrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
-		self.horiIncrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
-		self.vertDecrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
-		self.vertIncrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
+		self.horiIncrButton=LingmoIconButton(LingmoIconDef.CaretRightSolid8,parent=self)
+		self.vertDecrButton=LingmoIconButton(LingmoIconDef.CaretUpSolid8,parent=self)
+		self.vertIncrButton=LingmoIconButton(LingmoIconDef.CaretDownSolid8,parent=self)
+		self.bar=LingmoAbstractButton(self)
+		self.barWidth=self.minLine
+		self.horiDecrButton.setPaddings(2,2)
+		self.horiIncrButton.setPaddings(2,2)
+		self.vertDecrButton.setPaddings(2,2)
+		self.vertIncrButton.setPaddings(2,2)
+		self.horiDecrButton.pressed.connect(self.decrease)
+		self.horiIncrButton.pressed.connect(self.increase)
+		self.vertDecrButton.pressed.connect(self.decrease)
+		self.vertIncrButton.pressed.connect(self.increase)
+		self.animation=QSequentialAnimationGroup()
+		self.animation2=LingmoAnimation(self,'barWidth')
+		self.animation2.setDuration(167)
+		self.animation2.setEasingCurve(QEasingCurve.Type.OutCubic)
+		self.animation.addPause(450)
+		self.animation.addAnimation(self.animation2)
+		self.hovered.connect(lambda:self.setBarWidth(self.maxLine))
+		self.left.connect(lambda:self.setBarWidth(self.minLine))
+		self.scrolling=False
+		self.scrollPos=QPoint()
+		self.barFirstPos=QPoint()
+		self.bar.pressed.connect(lambda:self.setScrolling(True))
+		self.bar.released.connect(lambda:self.setScrolling(False))
 	def updateEvent(self):
+		self.horizontalPadding=15 if self.horizontal()else 3
+		self.verticalPadding=15 if self.vertical() else 3
 		self.raise_()
 		self.horiDecrButton.setVisible(self.horizontal())
 		self.horiIncrButton.setVisible(self.horizontal())
 		self.vertDecrButton.setVisible(self.vertical())
 		self.vertIncrButton.setVisible(self.vertical())
+		self.horiDecrButton.setIconBorderSize(12,12)
+		self.horiIncrButton.setIconBorderSize(12,12)
+		self.vertDecrButton.setIconBorderSize(12,12)
+		self.vertIncrButton.setIconBorderSize(12,12)
+		self.horiDecrButton.setIconSize(8)
+		self.horiIncrButton.setIconSize(8)
+		self.vertDecrButton.setIconSize(8)
+		self.vertIncrButton.setIconSize(8)
+		self.horiDecrButton.setIconColor(self.color)
+		self.horiIncrButton.setIconColor(self.color)
+		self.vertDecrButton.setIconColor(self.color)
+		self.vertIncrButton.setIconColor(self.color)
+		self.horiDecrButton.move(2,self.height()/2-self.horiDecrButton.height()/2)
+		self.horiIncrButton.move(self.width()-2-self.horiIncrButton.width(),self.height()/2-self.horiIncrButton.height()/2)
+		self.vertDecrButton.move(self.width()/2-self.vertDecrButton.width()/2,2)
+		self.vertIncrButton.move(self.width()/2-self.vertDecrButton.width()/2,self.height()-2-self.vertIncrButton.height())
+		self.barSize=(self.target.parentWidget().width()/self.target.width() if self.horizontal() else self.target.parentWidget().height()/self.target.height())if self.target!=None else 1
+		self.bar.resize(self.barSize*(self.width()-2*self.horizontalPadding)if self.horizontal()else self.barWidth,
+				self.barSize*(self.height()-2*self.verticalPadding)if self.vertical()else self.barWidth)
+		self.addStyleSheet('background-color',(QColor(44,44,44,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255)).name(QColor.NameFormat.HexArgb))
+		self.addStyleSheet('border-radius',5)
+		if self.bar.isPressed():	
+			self.bar.addStyleSheet('background-color',self.pressedColor.name(QColor.NameFormat.HexArgb))
+		else:
+			self.bar.addStyleSheet('background-color',self.color.name(QColor.NameFormat.HexArgb))
+		self.bar.addStyleSheet('border-radius',self.barWidth/2)
+		self.resize(self.parentWidget().width()if self.horizontal()else self.horizontalPadding*2+self.vertDecrButton.width(),
+			self.parentWidget().height() if self.vertical() else self.verticalPadding*2+self.horiDecrButton.height())
+		self.move(0 if self.horizontal() else self.parentWidget().width()-self.width(),0 if self.vertical() else self.parentWidget().height()-self.height())
+		self.bar.setVisible(self.barSize<1)
+		self.visualPosition=self.position if self.barSize<1 else 0
+		self.target.move(-self.visualPosition*(self.target.width()-self.target.parentWidget().width())if self.horizontal() else self.target.x(),
+				-self.visualPosition*(self.target.height()-self.target.parentWidget().height())if self.vertical() else self.target.y())
+		if self.scrolling:
+			pos=QCursor.pos()
+			if self.horizontal():
+				self.bar.move(min(max(self.barFirstPos.x()-(self.scrollPos.x()-pos.x()),self.bar.width()/2),self.width()-self.bar.width()/2),self.barFirstPos.y())			
+			else:
+				self.bar.move(self.barFirstPos.x(),min(max(self.barFirstPos.y()-(self.scrollPos.y()-pos.y()),self.bar.height()/2),self.height()-self.bar.height()/2))
+			self.position=(self.bar.x()-self.bar.width()/2)/(self.width()-self.bar.width())if self.horizontal() else (self.bar.y()-self.bar.height()/2)/(self.bar.height()-self.bar.height())
+		else:
+			self.bar.move(self.horizontalPadding+self.position*(self.width()-2*self.horizontalPadding-self.bar.width()) if self.horizontal() else self.width()/2-self.bar.width()/2,
+				self.verticalPadding+self.position*(self.height()-2*self.verticalPadding-self.bar.height()) if self.vertical() else self.height()/2-self.bar.height()/2)
 	def horizontal(self):
 		return self.orientation==Qt.Orientation.Horizontal
 	def vertical(self):
 		return self.orientation==Qt.Orientation.Vertical
+	def increase(self):
+		if self.target!=None:
+			if self.horizontal():
+				self.position+=10/(self.target.width()-self.target.parentWidget().width())
+			else:
+				self.position+=10/(self.target.height()-self.target.parentWidget().height())
+			self.position=min(self.position,1)
+	def decrease(self):
+		if self.target!=None:
+			if self.horizontal():
+				self.position-=10/(self.target.width()-self.target.parentWidget().width())
+			else:
+				self.position-=10/(self.target.height()-self.target.parentWidget().height())
+			self.position=max(self.position,0)
+	def setBarWidth(self,val):
+		self.animation2.setStartValue(self.barWidth)
+		self.animation2.setEndValue(val)
+		self.animation.start()
+	def setScrolling(self,val):
+		if val==True:
+			self.scrollPos=QCursor.pos()
+			self.barFirstPos=self.bar.pos()
+		self.scrolling=val
 class LingmoShadow(LingmoFrame):
 	def __init__(self,parent:QWidget=None,elevation=5,color=QColor(0,0,0,255),radius=4):
 		self.parentObject=parent
@@ -528,7 +636,7 @@ class LingmoSlider(LingmoFrame):
 		self.tooltip.setDisabled(not self.tooltipEnabled)
 		self.value=(self.fromValue+self.visualPosition*(self.toValue-self.fromValue))*self.stepSize//self.stepSize
 		self.value=int(self.value)if self.value%1==0 else self.value
-		self.tooltip.text.setText('  '+str(self.value)+'  ')
+		self.tooltip.setContent('  '+str(self.value)+'  ')
 		if self.sliding:
 			pos=QCursor.pos()
 			if self.horizontal():
