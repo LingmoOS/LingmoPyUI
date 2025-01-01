@@ -15,8 +15,8 @@ LingmoPyUI is the Python version of [LingmoUI](https://github.com/LingmoOS/Lingm
 * Desktop-level menu
 
 **New features:**
-* `addStyleSheet()`won't cover the previous stylesheet
-
+* `addStyleSheet()`add the stylesheet to the end of stylesheets,this won't cover the previous stylesheet or influence the children widgets.
+* Auto-Show Option 
 * ...
 
 ## Structures

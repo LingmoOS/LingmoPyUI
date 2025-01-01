@@ -1,5 +1,4 @@
 version='1.0.0'
-from gc import isenabled
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -14,6 +13,7 @@ from . import LingmoTextStyle
 from . import LingmoTheme
 from . import LingmoTools
 timerDelay=10
+widgetCount=0
 class LingmoAnimation(QVariantAnimation):
 	def __init__(self,obj: object,attr: str):
 		super().__init__()
@@ -28,7 +28,8 @@ class LingmoAnimation(QVariantAnimation):
 		self.obj.__setattr__(self.attr,value/self.precision)
 class LingmoFrame(QFrame):
 	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
+		global widgetCount
+		super().__init__(parent)
 		self.timer=QTimer()
 		self.timer.timeout.connect(self.updateEvent)
 		self.timer.timeout.connect(self.__update__)
@@ -36,11 +37,14 @@ class LingmoFrame(QFrame):
 		if show:
 			self.show()
 		self.styleSheets={}
+		widgetCount+=1
+		self.setObjectName('LingmoWidget'+str(widgetCount))
 	def __update__(self):
 		self.update()
-		styleSheetString=''
+		styleSheetString='QFrame#'+self.objectName()+'{'
 		for i in self.styleSheets:
 			styleSheetString+=i+': '+self.styleSheets[i]+';'
+		styleSheetString+='}'
 		self.setStyleSheet(styleSheetString)
 	def updateEvent(self):
 		pass
@@ -70,6 +74,7 @@ class LingmoAbstractButton(LingmoFrame):
 		return self.ispressed
 class LingmoLabel(QLabel):
 	def __init__(self,parent=None,show=True):
+		global widgetCount
 		super().__init__(parent)
 		self.timer=QTimer()
 		self.timer.timeout.connect(self.updateEvent)
@@ -79,11 +84,14 @@ class LingmoLabel(QLabel):
 			self.show()
 		self.styleSheets={}
 		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+		widgetCount+=1
+		self.setObjectName('LingmoWidget'+str(widgetCount))
 	def __update__(self):
 		self.update()
-		styleSheetString=''
+		styleSheetString='QLabel#'+self.objectName()+'{'
 		for i in self.styleSheets:
 			styleSheetString+=i+': '+self.styleSheets[i]+';'
+		styleSheetString+='}'
 		self.setStyleSheet(styleSheetString)
 		self.adjustSize()
 	def updateEvent():
@@ -258,6 +266,7 @@ class LingmoFocusRectangle(LingmoFrame):
 		self.addStyleSheet('border-radius',self.radius)
 		self.addStyleSheet('border-color',self.borderColor.name(QColor.NameFormat.HexArgb))
 		self.addStyleSheet('border-style','solid')
+		self.resize(self.parentWidget().size())
 	def setColor(self,val):
 		self.color=val
 	def setBorderWidth(self,val):
@@ -295,7 +304,7 @@ class LingmoIconButton(LingmoAbstractButton):
 	TextBesideIcon=Qt.ToolButtonStyle.ToolButtonTextBesideIcon
 	def __init__(self,iconSource,parent=None,show=True,display=IconOnly,iconSize=20,radius=LingmoTheme.instance._roundWindowRadius,content='',
 	hoverColor=LingmoTheme.instance.itemHoverColor,pressedColor=LingmoTheme.instance.itemPressColor,
-	normalColor=LingmoTheme.instance.itemNormalColor,disableColor=LingmoTheme.instance.itemNormalColor):
+	normalColor=LingmoTheme.instance.itemNormalColor,disableColor=LingmoTheme.instance.itemNormalColor,):
 		super().__init__(parent,show)
 		self.display=display
 		self.iconSize=iconSize
@@ -306,12 +315,23 @@ class LingmoIconButton(LingmoAbstractButton):
 		self.pressedColor=pressedColor
 		self.normalColor=normalColor
 		self.disableColor=disableColor
-		self.tooltip=LingmoToolTip(self)
+		self.background=LingmoFrame(self)
+		self.focusRect=LingmoFocusRectangle(self.background)
+		self.tooltip=LingmoToolTip(self.background,interval=1000,content=self.content)
 		self.icon=LingmoIcon(iconSource,show=False)
 		self.text=LingmoText(show=False)
 		self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
 		self.icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+		self.boxLayout=QBoxLayout(QBoxLayout.Direction.LeftToRight,self.background)
+		self.background.setLayout(self.boxLayout)
+		self.boxLayout.addWidget(self.icon)
+		self.boxLayout.setContentsMargins(0,0,0,0)
+		self.boxLayout.setSpacing(0)
+		self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
 	def updateEvent(self):
+		self.tooltip.setDisabled(self.content==''or self.display!=self.IconOnly)
+		self.tooltip.setContent(self.content)
+		self.text.setText(self.content)
 		self.color=QColor()
 		self.iconColor=QColor()
 		self.textColor=LingmoTheme.instance.fontPrimaryColor
@@ -328,6 +348,27 @@ class LingmoIconButton(LingmoAbstractButton):
 			self.iconColor=QColor(130,130,130,255)if LingmoTheme.instance.dark() else QColor(161,161,161,255)
 		self.icon.setIconColor(self.iconColor)
 		self.icon.setIconSize(self.iconSize)
+		self.text.setText(self.content)
+		self.text.setFont(LingmoTextStyle.caption)
+		self.background.addStyleSheet('border-radius',self.radius)
+		self.background.addStyleSheet('background-color',self.color.name(QColor.NameFormat.HexArgb))
+		self.text.addStyleSheet('color',self.textColor.name(QColor.NameFormat.HexArgb))
+		self.background.adjustSize()
+		self.background.move(8,8)
+		self.resize(self.background.width()+2*8,self.background.height()+2*8)
+		self.focusRect.setVisible(self.hasFocus())
+	def setDisplay(self,val):
+		self.display=val
+		self.boxLayout.removeWidget(self.icon)
+		self.boxLayout.removeWidget(self.text)
+		if self.display!=self.TextOnly:
+			self.boxLayout.addWidget(self.icon)
+		if self.display!=self.IconOnly:
+			self.boxLayout.addWidget(self.text)
+		if self.display==self.TextBesideIcon:
+			self.boxLayout.setDirection(QBoxLayout.Direction.LeftToRight)
+		else:
+			self.boxLayout.setDirection(QBoxLayout.Direction.TopToBottom)
 class LingmoImageButton(LingmoAbstractButton):
 	def __init__(self,normalImage: str,parent=None,show=True,hoveredImage: str|None = None,pushedImage: str|None = None):
 		super().__init__(parent,show)
@@ -555,6 +596,7 @@ class LingmoToolTip(LingmoFrame):
 		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 		self.background=LingmoFrame(self)
 		self.text=LingmoText(self.background)
+		self.content=content
 		self.text.setText(content)
 		self.text.setWordWrap(True)
 		self.padding=padding
@@ -578,6 +620,7 @@ class LingmoToolTip(LingmoFrame):
 		elif self.isVisible() and not(self.parentObject.underMouse()):
 			self.listening=False
 			self.hide()
+		self.text.setText(self.content)
 	def listen(self):
 		self.listening=True
 		self.timer1.timeout.connect(self.showText)
@@ -585,6 +628,8 @@ class LingmoToolTip(LingmoFrame):
 	def showText(self):
 		self.show()
 		self.timer1.stop()
+	def setContent(self,val):
+		self.content=val
 class LingmoWindow(LingmoFrame):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)
