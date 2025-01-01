@@ -529,11 +529,12 @@ class LingmoScrollBar(LingmoAbstractButton):
 				-self.visualPosition*(self.target.height()-self.target.parentWidget().height())if self.vertical() else self.target.y())
 		if self.scrolling:
 			pos=QCursor.pos()
+			print(self.scrollPos.x()-pos.x(),self.barFirstPos,self.bar.x())
 			if self.horizontal():
-				self.bar.move(min(max(self.barFirstPos.x()-(self.scrollPos.x()-pos.x()),self.bar.width()/2),self.width()-self.bar.width()/2),self.barFirstPos.y())			
+				self.bar.move(min(max(self.barFirstPos.x()-(self.scrollPos.x()-pos.x()),self.horizontalPadding),self.width()-self.bar.width()-self.horizontalPadding),self.barFirstPos.y())			
 			else:
-				self.bar.move(self.barFirstPos.x(),min(max(self.barFirstPos.y()-(self.scrollPos.y()-pos.y()),self.bar.height()/2),self.height()-self.bar.height()/2))
-			self.position=(self.bar.x()-self.bar.width()/2)/(self.width()-self.bar.width())if self.horizontal() else (self.bar.y()-self.bar.height()/2)/(self.bar.height()-self.bar.height())
+				self.bar.move(self.barFirstPos.x(),min(max(self.barFirstPos.y()-(self.scrollPos.y()-pos.y()),self.verticalPadding),self.height()-self.bar.height()-self.verticalPadding))
+			self.position=(self.bar.x()-self.horizontalPadding)/(self.width()-self.bar.width()-self.horizontalPadding)if self.horizontal() else (self.bar.y()-self.verticalPadding)/(self.bar.height()-self.bar.height()-self.verticalPadding)
 		else:
 			self.bar.move(self.horizontalPadding+self.position*(self.width()-2*self.horizontalPadding-self.bar.width()) if self.horizontal() else self.width()/2-self.bar.width()/2,
 				self.verticalPadding+self.position*(self.height()-2*self.verticalPadding-self.bar.height()) if self.vertical() else self.height()/2-self.bar.height()/2)
