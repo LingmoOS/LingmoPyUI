@@ -369,6 +369,16 @@ class LingmoIconButton(LingmoAbstractButton):
 			self.boxLayout.setDirection(QBoxLayout.Direction.LeftToRight)
 		else:
 			self.boxLayout.setDirection(QBoxLayout.Direction.TopToBottom)
+	def setIconColor(self,val):
+		self.iconColor=val
+	def setIconSize(self,val):
+		self.iconSize=val
+	def setIconWidth(self,val):
+		self.icon.resize(val,self.icon.height())
+	def setIconHeight(self,val):
+		self.icon.resize(self.icon.width(),val)
+	def setIconSize(self,width,height):
+		self.icon.resize(width,height)
 class LingmoImageButton(LingmoAbstractButton):
 	def __init__(self,normalImage: str,parent=None,show=True,hoveredImage: str|None = None,pushedImage: str|None = None):
 		super().__init__(parent,show)
@@ -424,10 +434,28 @@ class LingmoRouter(LingmoFrame):
 	def updateEvent(self):
 		pass
 class LingmoScrollBar(LingmoFrame):
-	def __init__(self,parent=None,show=True):
+	def __init__(self,parent=None,show=True,orientation=Qt.Orientation.Horizontal,color=QColor(159,159,159,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)):
 		super().__init__(parent,show)
+		self.orientation=orientation
+		self.color=color
+		self.pressedColor=QColor.darker(self.color)if LingmoTheme.instance.dark() else QColor.lighter(self.color)
+		self.minLine=2
+		self.maxLine=6
+		self.position=0
+		self.horiDecrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
+		self.horiIncrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
+		self.vertDecrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
+		self.vertIncrButton=LingmoIconButton(LingmoIconDef.CaretLeftSolid8,parent=self)
 	def updateEvent(self):
-		pass
+		self.raise_()
+		self.horiDecrButton.setVisible(self.horizontal())
+		self.horiIncrButton.setVisible(self.horizontal())
+		self.vertDecrButton.setVisible(self.vertical())
+		self.vertIncrButton.setVisible(self.vertical())
+	def horizontal(self):
+		return self.orientation==Qt.Orientation.Horizontal
+	def vertical(self):
+		return self.orientation==Qt.Orientation.Vertical
 class LingmoShadow(LingmoFrame):
 	def __init__(self,parent:QWidget=None,elevation=5,color=QColor(0,0,0,255),radius=4):
 		self.parentObject=parent
@@ -449,7 +477,7 @@ class LingmoShadow(LingmoFrame):
 			self.widgets[i-1].addStyleSheet('border-radius',self.radius+i)
 			self.widgets[i-1].addStyleSheet('border-color',QColor(self.color.red(),self.color.green(),self.color.blue(),255*0.01*(self.elevation-i+1)).name(QColor.NameFormat.HexArgb))
 class LingmoSlider(LingmoFrame):
-	def __init__(self,parent=None,show=True,tooltipEnabled=True,horizontal=True):
+	def __init__(self,parent=None,show=True,tooltipEnabled=True,orientation=Qt.Orientation.Horizontal):
 		super().__init__(parent,show)
 		self.tooltipEnabled=True
 		self.background=LingmoFrame(self)
@@ -463,7 +491,7 @@ class LingmoSlider(LingmoFrame):
 		self.stepSize=1
 		self.fromValue=0
 		self.toValue=100
-		self.horizontal=horizontal
+		self.orientation=orientation
 		self.iconScale=1
 		self.value=0
 		self.shadow=LingmoShadow(self.handle,radius=10)
@@ -488,12 +516,12 @@ class LingmoSlider(LingmoFrame):
 		self.icon.move(self.handle.width()/2-self.icon.width()/2,self.handle.height()/2-self.icon.height()/2)
 		self.icon.setIconSize(self.iconScale*10)
 		self.icon.setIconColor(LingmoTheme.instance.primaryColor)
-		self.background.setFixedSize(self.backgroundLength if self.horizontal else self.backgroundWidth,self.backgroundWidth if self.horizontal else self.backgroundLength)
+		self.background.setFixedSize(self.backgroundLength if self.horizontal() else self.backgroundWidth,self.backgroundWidth if self.horizontal() else self.backgroundLength)
 		self.background.addStyleSheet('border-radius',2)
 		self.background.addStyleSheet('background-color',(QColor(162,162,162,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)).name(QColor.NameFormat.HexArgb))
 		self.background.move(self.horizontalPadding,self.verticalPadding)
 		self.addPage.move(0,0)
-		self.addPage.resize(self.visualPosition*self.background.width() if self.horizontal else 6,6 if self.horizontal else self.visualPosition*self.background.height())
+		self.addPage.resize(self.visualPosition*self.background.width() if self.horizontal() else 6,6 if self.horizontal() else self.visualPosition*self.background.height())
 		self.addPage.addStyleSheet('border-radius',3)
 		self.addPage.addStyleSheet('background-color',LingmoTheme.instance.primaryColor.name(QColor.NameFormat.HexArgb))
 		self.resize(self.horizontalPadding*2+self.background.width(),self.verticalPadding*2+self.background.height())
@@ -503,13 +531,13 @@ class LingmoSlider(LingmoFrame):
 		self.tooltip.text.setText('  '+str(self.value)+'  ')
 		if self.sliding:
 			pos=QCursor.pos()
-			if self.horizontal:
+			if self.horizontal():
 				self.handle.move(min(max(self.handleFirstPos.x()-(self.slidePos.x()-pos.x()),self.handle.width()/2),self.background.width()-self.handle.width()/2),self.handleFirstPos.y())
 			else:
 				self.handle.move(self.handleFirstPos.x(),min(max(self.handleFirstPos.y()-(self.slidePos.y()-pos.y()),self.handle.height()/2),self.background.height()-self.handle.height()/2))
-			self.visualPosition=(self.handle.x()-self.handle.width()/2)/(self.background.width()-self.handle.width())if self.horizontal else (self.handle.y()-self.handle.height()/2)/(self.background.height()-self.handle.height())
+			self.visualPosition=(self.handle.x()-self.handle.width()/2)/(self.background.width()-self.handle.width())if self.horizontal() else (self.handle.y()-self.handle.height()/2)/(self.background.height()-self.handle.height())
 		else:
-			self.handle.move(self.horizontalPadding+(self.visualPosition if self.horizontal else 0.5)*(self.background.width()-self.handle.width()),self.verticalPadding+(0.5 if self.horizontal else self.visualPosition)*(self.background.height()-self.handle.height()))
+			self.handle.move(self.horizontalPadding+(self.visualPosition if self.horizontal() else 0.5)*(self.background.width()-self.handle.width()),self.verticalPadding+(0.5 if self.horizontal() else self.visualPosition)*(self.background.height()-self.handle.height()))
 	def setIconScale(self,val):
 		self.iconScaleAnimation.setStartValue(self.iconScale)
 		self.iconScaleAnimation.setEndValue(val)
@@ -519,6 +547,10 @@ class LingmoSlider(LingmoFrame):
 			self.slidePos=QCursor.pos()
 			self.handleFirstPos=self.handle.pos()
 		self.sliding=val
+	def horizontal(self):
+		return self.orientation==Qt.Orientation.Horizontal
+	def vertical(self):
+		return self.orientation==Qt.Orientation.Vertical
 class LingmoText(LingmoLabel):
 	def __init__(self,parent=None,show=True,text='',color=LingmoTheme.instance.fontPrimaryColor):
 		super().__init__(parent,show)
