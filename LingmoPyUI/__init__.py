@@ -474,10 +474,11 @@ class LingmoScrollBar(LingmoAbstractButton):
 		self.vertDecrButton.pressed.connect(self.decrease)
 		self.vertIncrButton.pressed.connect(self.increase)
 		self.animation=QSequentialAnimationGroup()
+		self.animation1=QPauseAnimation()
 		self.animation2=LingmoAnimation(self,'barWidth')
 		self.animation2.setDuration(167)
 		self.animation2.setEasingCurve(QEasingCurve.Type.OutCubic)
-		self.animation.addPause(450)
+		self.animation.addAnimation(self.animation1)
 		self.animation.addAnimation(self.animation2)
 		self.hovered.connect(lambda:self.setBarWidth(self.maxLine))
 		self.left.connect(lambda:self.setBarWidth(self.minLine))
@@ -529,7 +530,6 @@ class LingmoScrollBar(LingmoAbstractButton):
 				-self.visualPosition*(self.target.height()-self.target.parentWidget().height())if self.vertical() else self.target.y())
 		if self.scrolling:
 			pos=QCursor.pos()
-			print(self.scrollPos.x()-pos.x(),self.barFirstPos,self.bar.x())
 			if self.horizontal():
 				self.bar.move(min(max(self.barFirstPos.x()-(self.scrollPos.x()-pos.x()),self.horizontalPadding),self.width()-self.bar.width()-self.horizontalPadding),self.barFirstPos.y())			
 			else:
@@ -557,6 +557,10 @@ class LingmoScrollBar(LingmoAbstractButton):
 				self.position-=10/(self.target.height()-self.target.parentWidget().height())
 			self.position=max(self.position,0)
 	def setBarWidth(self,val):
+		if val==self.maxLine:
+			self.animation1.setDuration(450)
+		else:
+			self.animation1.setDuration(150)
 		self.animation2.setStartValue(self.barWidth)
 		self.animation2.setEndValue(val)
 		self.animation.start()
