@@ -1,26 +1,48 @@
-from LingmoPyUI import *
-frame=LingmoFrame()
-window=LingmoFrame(frame)
-a=0
-button=LingmoButton(window)
-button.setContent('111')
-button.move(0,a)
-a+=40
-button1=LingmoSlider(window)
-# button1.setContent('111')
-button1.move(0,a)
-a+=40
-button2=LingmoSlider(window)
-button2.move(0,a)
-a+=40
-button2=LingmoIconButton(LingmoIconDef.Accept,window,content='1111')
-button2.setDisplay(LingmoIconButton.TextBesideIcon)
-button2.move(0,a)
-a+=40
-window.resize(1000,1000)
-window.addStyleSheet('background-color','green')
-frame.resize(500,500)
-scrollbar=LingmoScrollBar(frame,target=window)
-scrollbar.orientation=Qt.Orientation.Horizontal
-tooltip=LingmoToolTip(button,content='发送到路口收到了科技焚枯食淡看来是道具发送到路口收到了科技焚枯食淡看来是道具发送到路口收到了科技焚枯食淡看来是道具')
-LingmoApp.run()
+import LingmoPyUI
+
+
+class ExampleApp:
+    def __init__(self):
+        self.frame = LingmoPyUI.LingmoFrame()
+        self.window = LingmoPyUI.LingmoFrame(self.frame)
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.window.resize(1000, 1000)
+        self.window.addStyleSheet("background-color", "green")
+
+        self.frame.resize(500, 500)
+
+        a = 0
+
+        button = LingmoPyUI.LingmoButton(self.window)
+        button.setContent("114514")
+        button.move(0, a)
+        a += 40
+
+        slider1 = LingmoPyUI.LingmoSlider(self.window)
+        slider1.move(0, a)
+        a += 40
+
+        slider2 = LingmoPyUI.LingmoSlider(self.window)
+        slider2.move(0, a)
+        a += 40
+
+        icon_button = LingmoPyUI.LingmoIconButton(
+            LingmoPyUI.LingmoIconDef.Accept, self.window, content="1111"
+        )
+        icon_button.setDisplay(LingmoPyUI.LingmoIconButton.TextBesideIcon)
+        a += 40
+
+        scrollbar = LingmoPyUI.LingmoScrollBar(self.frame, target=self.window)
+        scrollbar.orientation = LingmoPyUI.Qt.Orientation.Horizontal
+
+        tooltip = LingmoPyUI.LingmoToolTip(button, content="1919810")
+
+    def run(self):
+        LingmoPyUI.LingmoApp.run()
+
+
+if __name__ == "__main__":
+    app = ExampleApp()
+    app.run()
