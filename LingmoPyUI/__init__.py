@@ -12,7 +12,8 @@ from .LingmoRectangle import LingmoRectangle
 from . import LingmoTextStyle
 from . import LingmoTheme
 from . import LingmoTools
-timerDelay=10
+import math
+timerDelay=0
 widgetCount=0
 class LingmoAnimation(QVariantAnimation):
 	Variable=1
@@ -549,10 +550,80 @@ class LingmoProgressButton(LingmoButton):
 		self.setRectBackWidth(self.clip.width()*self.progress)
 		self.setRectBackHeight(self.clip.height()if self.progress==1 else 3)
 class LingmoProgressRing(LingmoFrame):
-	def __init__(self,parent=None,show=True):
+	def __init__(self,parent=None,show=True,duration=2000,strokeWidth=6,progressVisible=False,color=LingmoTheme.instance.primaryColor,
+			indeterminate=True,clip=True):
 		super().__init__(parent,show)
+		self.duration=duration
+		self.strokeWidth=strokeWidth
+		self.progressVisible=progressVisible
+		self.color=color
+		self.backgroundColor=QColor(99,99,99,255)if LingmoTheme.instance.dark() else QColor(214,214,214,255)
+		self.indeterminate=indeterminate
+		self.clip=clip
+		self.resize(56,56)
+		self.addStyleSheet('background-color','transparent')
+		self.addStyleSheet('border-color',self.backgroundColor)
+		self.addStyleSheet('border-width',self.strokeWidth)
+		self.addStyleSheet('border-style','solid')
+		self.visualPosition=0
+		self.startAngle=0
+		self.sweepAngle=0
+		self.startAngleAnimation=QSequentialAnimationGroup()
+		self.sweepAngleAnimation=QSequentialAnimationGroup()
+		self.startAngleAnimation1=LingmoAnimation(self,'startAngle')
+		self.startAngleAnimation1.setStartValue(0)
+		self.startAngleAnimation1.setEndValue(450)
+		self.startAngleAnimation2=LingmoAnimation(self,'startAngle')
+		self.startAngleAnimation2.setStartValue(450)
+		self.startAngleAnimation2.setEndValue(1080)
+		self.sweepAngleAnimation1=LingmoAnimation(self,'sweepAngle')
+		self.sweepAngleAnimation1.setStartValue(0)
+		self.sweepAngleAnimation1.setEndValue(180)
+		self.sweepAngleAnimation2=LingmoAnimation(self,'sweepAngle')
+		self.sweepAngleAnimation2.setStartValue(180)
+		self.sweepAngleAnimation2.setEndValue(0)
+		self.startAngleAnimation.addAnimation(self.startAngleAnimation1)
+		self.startAngleAnimation.addAnimation(self.startAngleAnimation2)
+		self.sweepAngleAnimation.addAnimation(self.sweepAngleAnimation1)
+		self.sweepAngleAnimation.addAnimation(self.sweepAngleAnimation2)
+		self.startAngleAnimation.setLoopCount(-1)
+		self.sweepAngleAnimation.setLoopCount(-1)
+		self.startAngleAnimation1.setDuration(self.duration/2)
+		self.startAngleAnimation2.setDuration(self.duration/2)
+		self.sweepAngleAnimation1.setDuration(self.duration/2)
+		self.sweepAngleAnimation2.setDuration(self.duration/2)
+		if indeterminate:
+			self.startAngleAnimation.start()
+			self.sweepAngleAnimation.start()
+		self.text=LingmoText(self)
 	def updateEvent(self):
-		pass
+		self.addStyleSheet('border-radius',self.width()/2)
+		self._radius=self.width()/2-self.strokeWidth
+		self._progress=0 if self.indeterminate else self.visualPosition
+		self.text.setVisible((not self.indeterminate)and self.progressVisible)
+		self.text.setText(str(int(self.visualPosition*100))+'%')
+		self.text.move(self.width()/2-self.text.width()/2,self.height()/2-self.text.width()/2)
+	def paintEvent(self,event):
+		painter=QPainter(self)
+		pen=QPen()
+		pen.setColor(self.color)
+		pen.setWidth(self.strokeWidth)
+		pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+		painter.setPen(pen)
+		if self.indeterminate:
+			painter.drawArc(self.strokeWidth/2,self.strokeWidth/2,self.width()-self.strokeWidth,self.height()-self.strokeWidth,
+				self.startAngle*16,self.sweepAngle*16)
+		else:
+			painter.drawArc(self.strokeWidth/2,self.strokeWidth/2,self.width()-self.strokeWidth,self.height()-self.strokeWidth,
+				-0.5*math.pi,-0.5*math.pi+self._progress*2*math.pi)
+	def setIndeterminate(self,val):
+		self.indeterminate=val
+		if val:
+			self.startAngleAnimation.start()
+			self.sweepAngleAnimation.start()
+		else:
+			self.startAngleAnimation.stop()
+			self.sweepAngleAnimation.stop()
 class LingmoRouter(LingmoFrame):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)
@@ -646,7 +717,7 @@ class LingmoScrollBar(LingmoAbstractButton):
 				self.bar.move(min(max(self.barFirstPos.x()-(self.scrollPos.x()-pos.x()),self.horizontalPadding),self.width()-self.bar.width()-self.horizontalPadding),self.barFirstPos.y())			
 			else:
 				self.bar.move(self.barFirstPos.x(),min(max(self.barFirstPos.y()-(self.scrollPos.y()-pos.y()),self.verticalPadding),self.height()-self.bar.height()-self.verticalPadding))
-			self.position=(self.bar.x()-self.horizontalPadding)/(self.width()-self.bar.width()-self.horizontalPadding)if self.horizontal() else (self.bar.y()-self.verticalPadding)/(self.bar.height()-self.bar.height()-self.verticalPadding)
+			self.position=(self.bar.x()-self.horizontalPadding)/(self.width()-self.bar.width()-2*self.horizontalPadding)if self.horizontal() else (self.bar.y()-self.verticalPadding)/(self.height()-self.bar.height()-2*self.verticalPadding)
 		else:
 			self.bar.move(self.horizontalPadding+self.position*(self.width()-2*self.horizontalPadding-self.bar.width()) if self.horizontal() else self.width()/2-self.bar.width()/2,
 				self.verticalPadding+self.position*(self.height()-2*self.verticalPadding-self.bar.height()) if self.vertical() else self.height()/2-self.bar.height()/2)

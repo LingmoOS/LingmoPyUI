@@ -8,6 +8,7 @@ class ExampleApp:
 
     def setup_ui(self):
         self.window.resize(1000, 1000)
+        self.window.setWindowTitle('Example')
         self.window.addStyleSheet("background-color", "green")
 
         self.frame.resize(500, 500)
@@ -36,6 +37,7 @@ class ExampleApp:
         a += 40
 
         self.scrollbar = LingmoPyUI.LingmoScrollBar(self.frame, target=self.window)
+        self.scrollbar.setOrientation(LingmoPyUI.Qt.Orientation.Vertical)
 
         self.tooltip = LingmoPyUI.LingmoToolTip(self.button, content="ToolTip")
 
@@ -46,7 +48,14 @@ class ExampleApp:
 
         self.filledButton = LingmoPyUI.LingmoFilledButton(self.window,content='Filled')
         self.filledButton.move(0,a)
-        
+        a+=40
+
+        self.progressRing1 = LingmoPyUI.LingmoProgressRing(self.window)
+        self.progressRing1.move(0,a)
+        self.progressRing2 = LingmoPyUI.LingmoProgressRing(self.window,progressVisible=True)
+        self.progressRing2.setIndeterminate(False)
+        self.progressRing2.move(60,a)
+
     def run(self):
         LingmoPyUI.LingmoApp.run()
 
