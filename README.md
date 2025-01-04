@@ -34,11 +34,11 @@ pip install lingmopyui
 
 Place this at the beginning of the source file:
 ```python
-from LingmoPyUI import *
+import LingmoPyUI
 ``` 
 Place this at the end of the file:
 ```python
-LingmoApp.run()
+LingmoPyUI.LingmoApp.run()
 ```
 
 

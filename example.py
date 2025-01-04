@@ -15,34 +15,41 @@ class ExampleApp:
 
         a = 0
 
-        button = LingmoPyUI.LingmoButton(self.window)
-        button.setContent("114514")
-        button.move(0, a)
+        self.button = LingmoPyUI.LingmoButton(self.window)
+        self.button.setContent("114514")
+        self.button.move(0, a)
         a += 40
 
-        slider1 = LingmoPyUI.LingmoSlider(self.window)
-        slider1.move(0, a)
+        self.slider1 = LingmoPyUI.LingmoSlider(self.window)
+        self.slider1.move(0, a)
         a += 40
 
-        slider2 = LingmoPyUI.LingmoSlider(self.window)
-        slider2.move(0, a)
-        a += 40
+        self.slider2 = LingmoPyUI.LingmoSlider(self.window)
+        self.slider2.setOrientation(LingmoPyUI.Qt.Orientation.Vertical)
+        self.slider2.move(0, a)
+        a += 200
 
-        icon_button = LingmoPyUI.LingmoIconButton(
+        self.iconButton = LingmoPyUI.LingmoIconButton(
             LingmoPyUI.LingmoIconDef.Accept, self.window, content="1111"
         )
-        icon_button.setDisplay(LingmoPyUI.LingmoIconButton.TextBesideIcon)
-        icon_button.move(0,a)
+        self.iconButton.setDisplay(LingmoPyUI.LingmoIconButton.TextBesideIcon)
+        self.iconButton.move(0,a)
         a += 40
 
-        scrollbar = LingmoPyUI.LingmoScrollBar(self.frame, target=self.window)
-        scrollbar.orientation = LingmoPyUI.Qt.Orientation.Horizontal
+        self.scrollbar = LingmoPyUI.LingmoScrollBar(self.frame, target=self.window)
 
-        tooltip = LingmoPyUI.LingmoToolTip(button, content="1919810")
+        self.tooltip = LingmoPyUI.LingmoToolTip(self.button, content="1919810")
+
+        self.progressButton = LingmoPyUI.LingmoProgressButton(self.window,content='123',progress=0.5)
+        self.progressButton.move(0,a)
+        self.progressButton.pressed.connect(self.progress)
+        a+=40
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
-
+        
+    def progress(self):
+        self.progressButton.setProgress(1)
 
 if __name__ == "__main__":
     app = ExampleApp()
