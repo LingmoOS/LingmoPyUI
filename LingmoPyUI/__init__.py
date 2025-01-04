@@ -55,7 +55,11 @@ class LingmoFrame(QFrame):
 	def updateEvent(self):
 		pass
 	def addStyleSheet(self,name,style):
-		self.styleSheets[name]=str(style)
+		if isinstance(style,int) or isinstance(style,float):
+			style=str(style)
+		if isinstance(style,QColor):
+			style=style.name(QColor.NameFormat.HexArgb)
+		self.styleSheets[name]=style
 	def isHovered(self):
 		return self.underMouse()
 class LingmoAbstractButton(LingmoFrame):
@@ -103,7 +107,11 @@ class LingmoLabel(QLabel):
 	def updateEvent():
 		pass
 	def addStyleSheet(self,name,style):
-		self.styleSheets[name]=str(style)
+		if isinstance(style,int) or isinstance(style,float):
+			style=str(style)
+		if isinstance(style,QColor):
+			style=style.name(QColor.NameFormat.HexArgb)
+		self.styleSheets[name]=style
 	def isHovered(self):
 		return self.underMouse()
 class LingmoAcrylic(LingmoFrame):
@@ -129,8 +137,8 @@ class LingmoAcrylic(LingmoFrame):
 	def updateEvent(self):
 		self.blurEffect.setBlurRadius(self.blurRadius)
 		self.blurWidget.setGeometry(self.targetRect)
-		self.luminosityWidget.addStyleSheet('background-color',QColor(1,1,1,self.luminosity*255).name(QColor.NameFormat.HexArgb))
-		self.tintWidget.addStyleSheet('background-color',self.tintColor.name(QColor.NameFormat.HexArgb))
+		self.luminosityWidget.addStyleSheet('background-color',QColor(1,1,1,self.luminosity*255))
+		self.tintWidget.addStyleSheet('background-color',self.tintColor)
 		self.imageWidget.setWindowOpacity(self.noiseOpacity)
 	def setTintColor(self,val):
 		self.tintColor=val
@@ -219,17 +227,18 @@ class LingmoControlBackground(LingmoFrame):
 		self.shadow=shadow
 		self.color=color
 		self.borderColor=QColor(48,48,48,255) if LingmoTheme.instance.dark() else QColor(188,188,188,255)
-		self.startColor=QColor.lighter(self.borderColor,1.25)
+		self.startColor=QColor.lighter(self.borderColor,125)
 		self.endColor=self.borderColor if self.shadow else self.startColor
 		self.borderWidths=borderWidths
 		self.rectBorder=LingmoFrame(self)
 		self.rectBack=LingmoFrame(self)
+		self.borderColorUnsetted=True
 	def updateEvent(self):
 		self.rectBack.addStyleSheet('border-radius',self.radius)
-		self.rectBack.addStyleSheet('background-color',self.color.name(QColor.NameFormat.HexArgb))
+		self.rectBack.addStyleSheet('background-color',self.color)
 		self.rectBack.setGeometry(self.borderWidths[0],self.borderWidths[1],self.width()-self.borderWidths[0]-self.borderWidths[2],self.height()-self.borderWidths[1]-self.borderWidths[3])
-		self.borderColor=QColor(48,48,48,255) if LingmoTheme.instance.dark() else QColor(188,188,188,255)
-		self.startColor=QColor.lighter(self.borderColor,1.25)
+		self.borderColor=(QColor(48,48,48,255) if LingmoTheme.instance.dark() else QColor(188,188,188,255))if self.borderColorUnsetted else self.borderColor
+		self.startColor=QColor.lighter(self.borderColor,125)
 		self.endColor=self.borderColor if self.shadow else self.startColor
 		self.rectBorder.addStyleSheet('background-color','''qlineargradient(x1:0 , y1:0 , x2:0 , y2:1,
                 stop:0    rgba(%d,%d,%d,%d),
@@ -257,16 +266,51 @@ class LingmoControlBackground(LingmoFrame):
 		self.borderWidths[3]=val
 	def setBorderWidth(self,val):
 		self.borderWidths=[val,val,val,val]
-class LingmoDropDownBox(LingmoFrame):
+	def setBorderColor(self,val):
+		self.borderColor=val
+		self.borderColorUnsetted=False
+class LingmoDropDownBox(LingmoButton):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)
 	def updateEvent(self):
 		pass
-class LingmoFilledButton(LingmoFrame):
-	def __init__(self,parent=None,show=True):
+class LingmoFilledButton(LingmoAbstractButton):
+	def __init__(self,parent=None,show=True,content=''):
 		super().__init__(parent,show)
+		self.content=content
+		self.normalColor=LingmoTheme.instance.primaryColor
+		self.hoverColor=self.normalColor.darker(110)if LingmoTheme.instance.dark() else self.normalColor.lighter(110)
+		self.disableColor=QColor(82,82,82,255)if LingmoTheme.instance.dark()else QColor(199,199,199,255)
+		self.pressedColor=self.normalColor.darker(120)if LingmoTheme.instance.dark() else self.normalColor.lighter(120)
+		self.textColor=(QColor(173,173,173,255)if not self.isEnabled() else QColor(0,0,0,255))if LingmoTheme.instance.dark() else QColor(255,255,255,255)
+		self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+		self.horizontalPaddding=12
+		self.verticalPadding=0
+		self.background=LingmoControlBackground(self)
+		self.focusRect=LingmoFocusRectangle(self.background,radius=4)
+		self.focusRect.resize(self.background.size())
+		self.contentText=LingmoText(self)
+		self.contentText.setAlignment(Qt.AlignmentFlag.AlignCenter)
+		self.contentText.setFont(self.font())
 	def updateEvent(self):
-		pass
+		if self.isEnabled():
+			if self.isPressed():
+				self.bgColor=self.pressedColor
+			elif self.isHovered():
+				self.bgColor=self.hoverColor
+			else:
+				self.bgColor=self.normalColor
+		else:
+			self.bgColor=self.disableColor
+		self.contentText.setColor(self.textColor)
+		self.background.setColor(self.bgColor)
+		self.background.setRadius(LingmoTheme.instance._roundWindowRadius)
+		self.background.setBorderWidth(1 if self.isEnabled() else 0)
+		self.background.setBorderColor(self.normalColor.darker(120)if self.isEnabled() else self.disableColor)
+		self.focusRect.setVisible(self.hasFocus())
+		self.contentText.setText(self.content)
+		self.contentText.move(self.width()/2-self.contentText.width()/2,
+						self.height()/2-self.contentText.height()/2)
 class LingmoFocusRectangle(LingmoFrame):
 	def __init__(self,parent=None,show=True,color=QColor(0,0,0,0),borderWidth=2,radius=10,borderColor=QColor(255,255,255,255)if LingmoTheme.instance.dark() else QColor(0,0,0,255)):
 		super().__init__(parent,show)
@@ -276,10 +320,10 @@ class LingmoFocusRectangle(LingmoFrame):
 		self.borderColor=borderColor
 	def updateEvent(self):
 		self.raise_()
-		self.addStyleSheet('background-color',self.color.name(QColor.NameFormat.HexArgb))
+		self.addStyleSheet('background-color',self.color)
 		self.addStyleSheet('border-width',self.borderWidth)
 		self.addStyleSheet('border-radius',self.radius)
-		self.addStyleSheet('border-color',self.borderColor.name(QColor.NameFormat.HexArgb))
+		self.addStyleSheet('border-color',self.borderColor)
 		self.addStyleSheet('border-style','solid')
 		self.resize(self.parentWidget().size())
 	def setColor(self,val):
@@ -304,7 +348,7 @@ class LingmoIcon(LingmoLabel):
 		self.fontFamily.setPixelSize(self.iconSize)
 		self.setFont(self.fontFamily)
 		self.setText(chr(self.iconSource))
-		self.addStyleSheet('color',self.iconColor.name(QColor.NameFormat.HexArgb))
+		self.addStyleSheet('color',self.iconColor)
 		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 	def setIconSource(self,val):
 		self.iconSource=val
@@ -369,8 +413,8 @@ class LingmoIconButton(LingmoAbstractButton):
 		self.text.setText(self.content)
 		self.text.setFont(LingmoTextStyle.caption)
 		self.background.addStyleSheet('border-radius',self.radius)
-		self.background.addStyleSheet('background-color',self.color.name(QColor.NameFormat.HexArgb))
-		self.text.addStyleSheet('color',self.textColor.name(QColor.NameFormat.HexArgb))
+		self.background.addStyleSheet('background-color',self.color)
+		self.text.addStyleSheet('color',self.textColor)
 		self.background.adjustSize()
 		self.background.move(self.horizontalPadding,self.verticalPadding)
 		self.resize(self.background.width()+2*self.horizontalPadding,self.background.height()+2*self.verticalPadding)
@@ -471,9 +515,9 @@ class LingmoProgressButton(LingmoButton):
 			self.textDisabledColor=QColor(131,131,131,255)if LingmoTheme.instance.dark()else QColor(160,160,160,255)
 		super().updateEvent()
 		self.normalColor=LingmoTheme.instance.primaryColor if self.checked() else (QColor(62,62,62,255)if LingmoTheme.instance.dark() else QColor(254,254,254,255))
-		self.hoverColor=(self.normalColor.darker(1.1)if LingmoTheme.instance.dark()else self.normalColor.lighter(1.1))if self.checked() else (QColor(68,68,68,255)if LingmoTheme.instance.dark()else QColor(246,246,246,255))
+		self.hoverColor=(self.normalColor.darker(110)if LingmoTheme.instance.dark()else self.normalColor.lighter(110))if self.checked() else (QColor(68,68,68,255)if LingmoTheme.instance.dark()else QColor(246,246,246,255))
 		self.disableColor=(QColor(82,82,82,255)if LingmoTheme.instance.dark() else QColor(199,199,199,255))if self.checked() else (QColor(59,59,59,255)if LingmoTheme.instance.dark()else QColor(244,244,244,255))
-		self.pressedColor=self.normalColor.darker(1.2)if LingmoTheme.instance.dark()else self.normalColor.lighter(1.2)
+		self.pressedColor=self.normalColor.darker(120)if LingmoTheme.instance.dark()else self.normalColor.lighter(120)
 		self.clip.resize(self.size())
 		if not self.isEnabled():
 			self.bgColor=self.disableColor
@@ -487,12 +531,11 @@ class LingmoProgressButton(LingmoButton):
 		self.ctrlBg.setColor(self.bgColor)
 		self.rectBack.resize(self.rectBackWidth,self.rectBackHeight)
 		self.rectBack.setVisible(not self.checked())
-		self.rectBack.addStyleSheet('background-color',LingmoTheme.instance.primaryColor.name(QColor.NameFormat.HexArgb))
+		self.rectBack.addStyleSheet('background-color',LingmoTheme.instance.primaryColor)
 	def checked(self):
 		return self.rectBack.height()==self.ctrlBg.height() and self.progress==1
 	def setRectBackWidth(self,val):
 		if val!=self.rectBackWidth:
-			print(1)
 			self.widthAnimation.setStartValue(self.rectBackWidth)
 			self.widthAnimation.setEndValue(val)
 			self.widthAnimation.start()
@@ -583,12 +626,12 @@ class LingmoScrollBar(LingmoAbstractButton):
 		self.barSize=(self.target.parentWidget().width()/self.target.width() if self.horizontal() else self.target.parentWidget().height()/self.target.height())if self.target!=None else 1
 		self.bar.resize(self.barSize*(self.width()-2*self.horizontalPadding)if self.horizontal()else self.barWidth,
 				self.barSize*(self.height()-2*self.verticalPadding)if self.vertical()else self.barWidth)
-		self.addStyleSheet('background-color',(QColor(44,44,44,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255)).name(QColor.NameFormat.HexArgb))
+		self.addStyleSheet('background-color',(QColor(44,44,44,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255)))
 		self.addStyleSheet('border-radius',5)
 		if self.bar.isPressed():	
-			self.bar.addStyleSheet('background-color',self.pressedColor.name(QColor.NameFormat.HexArgb))
+			self.bar.addStyleSheet('background-color',self.pressedColor)
 		else:
-			self.bar.addStyleSheet('background-color',self.color.name(QColor.NameFormat.HexArgb))
+			self.bar.addStyleSheet('background-color',self.color)
 		self.bar.addStyleSheet('border-radius',self.barWidth/2)
 		self.resize(self.parentWidget().width()if self.horizontal()else self.horizontalPadding*2+self.vertDecrButton.width(),
 			self.parentWidget().height() if self.vertical() else self.verticalPadding*2+self.horiDecrButton.height())
@@ -659,7 +702,7 @@ class LingmoShadow(LingmoFrame):
 			self.widgets[i-1].addStyleSheet('border-width',i)
 			self.widgets[i-1].addStyleSheet('border-style','solid')
 			self.widgets[i-1].addStyleSheet('border-radius',self.radius+i)
-			self.widgets[i-1].addStyleSheet('border-color',QColor(self.color.red(),self.color.green(),self.color.blue(),255*0.01*(self.elevation-i+1)).name(QColor.NameFormat.HexArgb))
+			self.widgets[i-1].addStyleSheet('border-color',QColor(self.color.red(),self.color.green(),self.color.blue(),255*0.01*(self.elevation-i+1)))
 class LingmoSlider(LingmoFrame):
 	def __init__(self,parent=None,show=True,tooltipEnabled=True,orientation=Qt.Orientation.Horizontal):
 		super().__init__(parent,show)
@@ -696,18 +739,18 @@ class LingmoSlider(LingmoFrame):
 	def updateEvent(self):
 		self.handle.resize(20,20)
 		self.handle.addStyleSheet('border-radius',10)
-		self.handle.addStyleSheet('background-color',(QColor(69,69,69,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255)).name(QColor.NameFormat.HexArgb))
+		self.handle.addStyleSheet('background-color',(QColor(69,69,69,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255)))
 		self.icon.move(self.handle.width()/2-self.icon.width()/2,self.handle.height()/2-self.icon.height()/2)
 		self.icon.setIconSize(self.iconScale*10)
 		self.icon.setIconColor(LingmoTheme.instance.primaryColor)
 		self.background.setFixedSize(self.backgroundLength if self.horizontal() else self.backgroundWidth,self.backgroundWidth if self.horizontal() else self.backgroundLength)
 		self.background.addStyleSheet('border-radius',2)
-		self.background.addStyleSheet('background-color',(QColor(162,162,162,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)).name(QColor.NameFormat.HexArgb))
+		self.background.addStyleSheet('background-color',(QColor(162,162,162,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)))
 		self.background.move(self.horizontalPadding,self.verticalPadding)
 		self.addPage.move(0,0 if self.horizontal() else self.background.height()-self.visualPosition*self.background.height()+(1 if self.visualPosition!=1 else 0))
 		self.addPage.resize(self.visualPosition*self.background.width() if self.horizontal() else 6,6 if self.horizontal() else self.visualPosition*self.background.height())
 		self.addPage.addStyleSheet('border-radius',3)
-		self.addPage.addStyleSheet('background-color',LingmoTheme.instance.primaryColor.name(QColor.NameFormat.HexArgb))
+		self.addPage.addStyleSheet('background-color',LingmoTheme.instance.primaryColor)
 		self.resize(self.horizontalPadding*2+self.background.width(),self.verticalPadding*2+self.background.height())
 		self.tooltip.setDisabled(not self.tooltipEnabled)
 		self.value=(self.fromValue+self.visualPosition*(self.toValue-self.fromValue))*self.stepSize//self.stepSize
@@ -748,7 +791,7 @@ class LingmoText(LingmoLabel):
 		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 	def updateEvent(self):
 		self.adjustSize()
-		self.addStyleSheet('color',QColor(self.color if self.colorEnabled else (qRgba(131,131,131,255)if LingmoTheme.instance.dark()else qRgba(160,160,160,255))).name(QColor.NameFormat.HexArgb))
+		self.addStyleSheet('color',QColor(self.color if self.colorEnabled else (qRgba(131,131,131,255)if LingmoTheme.instance.dark()else qRgba(160,160,160,255))))
 		self.setTextFormat(self.renderType)
 	def setColorEnabled(self,val: bool):
 		self.colorEnabled=val
@@ -764,8 +807,8 @@ class LingmoTextButton(LingmoAbstractButton):
 		super().__init__(parent,show)
 		self.content=content
 		self.normalColor=normalColor
-		self.hoverColor=(QColor.darker(self.normalColor,1.15)if LingmoTheme.instance.dark() else QColor.lighter(self.normalColor,1.15))if hoverColor==None else hoverColor
-		self.pressedColor=(QColor.darker(self.normalColor,1.3)if LingmoTheme.instance.dark() else QColor.lighter(self.normalColor,1.3))if pressedColor==None else pressedColor
+		self.hoverColor=(QColor.darker(self.normalColor,115)if LingmoTheme.instance.dark() else QColor.lighter(self.normalColor,115))if hoverColor==None else hoverColor
+		self.pressedColor=(QColor.darker(self.normalColor,130)if LingmoTheme.instance.dark() else QColor.lighter(self.normalColor,130))if pressedColor==None else pressedColor
 		self.disableColor=disableColor
 		self.backgroundNormalColor=backgroundNormalColor
 		self.backgroundHoverColor=backgroundHoverColor
@@ -795,9 +838,9 @@ class LingmoTextButton(LingmoAbstractButton):
 		elif self.isHovered():
 			self.textColor=self.hoverColor
 			self.backgroundColor=self.backgroundHoverColor
-		self.ctrlBg.addStyleSheet('background-color',self.backgroundColor.name(QColor.NameFormat.HexArgb))
+		self.ctrlBg.addStyleSheet('background-color',self.backgroundColor)
 		self.ctrlBg.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius)
-		self.contentText.addStyleSheet('color',self.textColor.name(QColor.NameFormat.HexArgb))
+		self.contentText.addStyleSheet('color',self.textColor)
 		self.focusRect.setVisible(self.hasFocus())
 		self.contentText.setText(self.content)
 		self.contentText.move(self.width()/2-self.contentText.width()/2,
@@ -832,7 +875,7 @@ class LingmoToolTip(LingmoFrame):
 		self.move(self.parentObject.mapToGlobal(QPoint(self.parentObject.width()/2-self.width()/2,-self.height()-3)))
 		self.background.setGeometry(self.padding,self.padding,self.text.width()+self.padding,self.text.height()+self.padding)
 		self.text.move(self.background.width()/2-self.text.width()/2,self.background.height()/2-self.text.height()/2)
-		self.background.addStyleSheet('background-color',(QColor(50,49,48,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255)).name(QColor.NameFormat.HexArgb))
+		self.background.addStyleSheet('background-color',(QColor(50,49,48,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255)))
 		self.background.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius)
 		if not(self.listening) and self.parentObject.underMouse() and self.isEnabled():
 			self.listen()

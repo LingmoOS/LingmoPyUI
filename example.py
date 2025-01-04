@@ -1,6 +1,5 @@
 import LingmoPyUI
 
-
 class ExampleApp:
     def __init__(self):
         self.frame = LingmoPyUI.LingmoFrame()
@@ -16,7 +15,7 @@ class ExampleApp:
         a = 0
 
         self.button = LingmoPyUI.LingmoButton(self.window)
-        self.button.setContent("114514")
+        self.button.setContent("Button")
         self.button.move(0, a)
         a += 40
 
@@ -30,7 +29,7 @@ class ExampleApp:
         a += 200
 
         self.iconButton = LingmoPyUI.LingmoIconButton(
-            LingmoPyUI.LingmoIconDef.Accept, self.window, content="1111"
+            LingmoPyUI.LingmoIconDef.Accept, self.window, content="IconButton"
         )
         self.iconButton.setDisplay(LingmoPyUI.LingmoIconButton.TextBesideIcon)
         self.iconButton.move(0,a)
@@ -38,16 +37,19 @@ class ExampleApp:
 
         self.scrollbar = LingmoPyUI.LingmoScrollBar(self.frame, target=self.window)
 
-        self.tooltip = LingmoPyUI.LingmoToolTip(self.button, content="1919810")
+        self.tooltip = LingmoPyUI.LingmoToolTip(self.button, content="ToolTip")
 
-        self.progressButton = LingmoPyUI.LingmoProgressButton(self.window,content='123',progress=0.5)
+        self.progressButton = LingmoPyUI.LingmoProgressButton(self.window,content='Progress',progress=0.5)
         self.progressButton.move(0,a)
         self.progressButton.pressed.connect(self.progress)
         a+=40
 
+        self.filledButton = LingmoPyUI.LingmoFilledButton(self.window,content='Filled')
+        self.filledButton.move(0,a)
+        
     def run(self):
         LingmoPyUI.LingmoApp.run()
-        
+
     def progress(self):
         self.progressButton.setProgress(1)
 
