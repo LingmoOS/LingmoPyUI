@@ -72,15 +72,19 @@ class LingmoAbstractButton(LingmoFrame):
 		super().__init__(parent,show)
 		self.ispressed=False
 	def mousePressEvent(self, event):
-		self.pressed.emit()
-		self.ispressed=True
+		if self.isEnabled():
+			self.pressed.emit()
+			self.ispressed=True
 	def mouseReleaseEvent(self, event):
-		self.released.emit()
-		self.ispressed=False
+		if self.isEnabled():
+			self.released.emit()
+			self.ispressed=False
 	def enterEvent(self, event):
-		self.hovered.emit()
+		if self.isEnabled():
+			self.hovered.emit()
 	def leaveEvent(self, event):
-		self.left.emit()
+		if self.isEnabled():
+			self.left.emit()
 	def isPressed(self):
 		return self.ispressed
 class LingmoLabel(QLabel):
@@ -168,7 +172,7 @@ class LingmoButton(LingmoAbstractButton):
 	dividerColor=QColor(80,80,80,255)if LingmoTheme.instance.dark() else QColor(233,233,233,255),
 	textNormalColor=QColor(255,255,255,255)if LingmoTheme.instance.dark() else QColor(0,0,0,255),
 	textPressedColor=QColor(162,162,162,255)if LingmoTheme.instance.dark() else QColor(96,96,96,255),
-	textDisabledColor=QColor(131,131,131,255)if LingmoTheme.instance.dark() else QColor(160,160,160,255),clickShadowChange=True):
+	textDisabledColor=QColor(131,131,131,255)if LingmoTheme.instance.dark() else QColor(160,160,160,255),clickShadowChange=True,autoResize=True):
 		super().__init__(parent,show)
 		self.content=content
 		self.normalColor=normalColor
@@ -190,6 +194,7 @@ class LingmoButton(LingmoAbstractButton):
 		self.contentText.setAlignment(Qt.AlignmentFlag.AlignCenter)
 		self.contentText.setFont(self.font())
 		self.clickShadowChange=clickShadowChange
+		self.autoResize=autoResize
 	def updateEvent(self):
 		if self.isEnabled():
 			if self.isPressed():
@@ -202,13 +207,17 @@ class LingmoButton(LingmoAbstractButton):
 		if self.clickShadowChange: self.ctrlBg.setShadow((not self.isPressed())and self.isEnabled())
 		self.focusRect.setVisible(self.hasFocus())
 		self.contentText.setText(self.content)
-		self.contentText.move(self.width()/2-self.contentText.width()/2,
-						self.height()/2-self.contentText.height()/2)
+		self.contentText.move(10+12,self.height()/2-self.contentText.height()/2)
 		self.contentText.raise_()
+		if self.autoResize:
+			self.ctrlBg.resize(self.contentText.width()+20,self.height())
+		self.resize(self.ctrlBg.width()+2*self.horizontalPadding,self.ctrlBg.height()+2*self.verticalPadding)
 	def setContent(self,val):
 		self.content=val
 	def setClickShadowChange(self,val):
 		self.clickShadowChange=val
+	def setAutoResize(self,val):
+		self.autoResize=val
 class LingmoClip(LingmoFrame):
 	def __init__(self,parent=None,show=True,radius=0):
 		super().__init__(parent,show)
@@ -467,11 +476,32 @@ class LingmoInfoBar(LingmoFrame):
 		super().__init__(parent,show)
 	def updateEvent(self):
 		pass
-class LingmoLoadingButton(LingmoAbstractButton):
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
+class LingmoLoadingButton(LingmoButton):
+	def __init__(self,parent=None,show=True,loading=False):
+		super().__init__(parent,show,autoResize=False)
+		self.loading=loading
+		self.ring=LingmoProgressRing(self,strokeWidth=3)
+		self.ringWidth=16
+		self.ringWidthAnimation=LingmoAnimation(self,'ringWidth')
+		self.ringWidthAnimation.setDuration(167)
+		self.ringWidthAnimation.setEasingCurve(QEasingCurve.Type.OutCubic)
 	def updateEvent(self):
-		pass
+		super().updateEvent()
+		self.ring.resize(self.ringWidth,16)
+		self.setDisabled(self.loading)
+		self.ring.setVisible(self.ringWidth!=0)
+		self.ring.move(self.contentText.x()+self.contentText.width()+6,self.height()/2-self.ring.height()/2)
+		self.ctrlBg.resize(self.contentText.x()+self.contentText.width()+self.ringWidth,self.height())
+	def setLoading(self,val):
+		self.loading=val
+		self.setRingWidth(16 if self.loading else 0)
+	def setRingWidth(self,val):
+		if LingmoTheme.instance._animationEnabled:
+			self.ringWidthAnimation.setStartValue(self.ringWidth)
+			self.ringWidthAnimation.setEndValue(val)
+			self.ringWidthAnimation.start()
+		else:
+			self.ringWidth=val
 class LingmoMenu(LingmoFrame):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)
@@ -489,6 +519,7 @@ class LingmoProgressButton(LingmoButton):
 	def __init__(self,parent=None,show=True,content='',progress=0):
 		super().__init__(parent,show)
 		self.progress=progress
+		self.ctrlBg.deleteLater()
 		self.ctrlBg=LingmoControlBackground(self)
 		self.ctrlBg.setRadius(LingmoTheme.instance._roundWindowRadius)
 		self.clip=LingmoClip(self.ctrlBg,radius=LingmoTheme.instance._roundWindowRadius)
@@ -519,7 +550,7 @@ class LingmoProgressButton(LingmoButton):
 		self.hoverColor=(self.normalColor.darker(110)if LingmoTheme.instance.dark()else self.normalColor.lighter(110))if self.checked() else (QColor(68,68,68,255)if LingmoTheme.instance.dark()else QColor(246,246,246,255))
 		self.disableColor=(QColor(82,82,82,255)if LingmoTheme.instance.dark() else QColor(199,199,199,255))if self.checked() else (QColor(59,59,59,255)if LingmoTheme.instance.dark()else QColor(244,244,244,255))
 		self.pressedColor=self.normalColor.darker(120)if LingmoTheme.instance.dark()else self.normalColor.lighter(120)
-		self.clip.resize(self.size())
+		self.clip.resize(self.ctrlBg.size())
 		if not self.isEnabled():
 			self.bgColor=self.disableColor
 		elif self.isPressed() and self.checked():
@@ -528,6 +559,7 @@ class LingmoProgressButton(LingmoButton):
 			self.bgColor=self.hoverColor
 		else:
 			self.bgColor=self.normalColor
+		self.ctrlBg.move(self.horizontalPadding,self.verticalPadding)
 		self.ctrlBg.setBorderWidth(0 if self.checked()else 1)
 		self.ctrlBg.setColor(self.bgColor)
 		self.rectBack.resize(self.rectBackWidth,self.rectBackHeight)
@@ -551,7 +583,7 @@ class LingmoProgressButton(LingmoButton):
 		self.setRectBackHeight(self.clip.height()if self.progress==1 else 3)
 class LingmoProgressRing(LingmoFrame):
 	def __init__(self,parent=None,show=True,duration=2000,strokeWidth=6,progressVisible=False,color=LingmoTheme.instance.primaryColor,
-			indeterminate=True,clip=True):
+			indeterminate=True,clip=True,progress=0):
 		super().__init__(parent,show)
 		self.duration=duration
 		self.strokeWidth=strokeWidth
@@ -565,7 +597,7 @@ class LingmoProgressRing(LingmoFrame):
 		self.addStyleSheet('border-color',self.backgroundColor)
 		self.addStyleSheet('border-width',self.strokeWidth)
 		self.addStyleSheet('border-style','solid')
-		self.visualPosition=0
+		self.visualPosition=progress
 		self.startAngle=0
 		self.sweepAngle=0
 		self.startAngleAnimation=QSequentialAnimationGroup()
@@ -602,7 +634,7 @@ class LingmoProgressRing(LingmoFrame):
 		self._progress=0 if self.indeterminate else self.visualPosition
 		self.text.setVisible((not self.indeterminate)and self.progressVisible)
 		self.text.setText(str(int(self.visualPosition*100))+'%')
-		self.text.move(self.width()/2-self.text.width()/2,self.height()/2-self.text.width()/2)
+		self.text.move(self.width()/2-self.text.width()/2,self.height()/2-self.text.height()/2)
 	def paintEvent(self,event):
 		painter=QPainter(self)
 		pen=QPen()
@@ -624,6 +656,8 @@ class LingmoProgressRing(LingmoFrame):
 		else:
 			self.startAngleAnimation.stop()
 			self.sweepAngleAnimation.stop()
+	def setProgress(self,val):
+		self.visualPosition=val
 class LingmoRouter(LingmoFrame):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)

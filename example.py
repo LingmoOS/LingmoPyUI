@@ -7,7 +7,7 @@ class ExampleApp:
         self.setup_ui()
 
     def setup_ui(self):
-        self.window.resize(1000, 1000)
+        self.window.resize(500, 1000)
         self.window.setWindowTitle('Example')
         self.window.addStyleSheet("background-color", "green")
 
@@ -16,7 +16,7 @@ class ExampleApp:
         a = 0
 
         self.button = LingmoPyUI.LingmoButton(self.window)
-        self.button.setContent("Button")
+        self.button.setContent("LingmoButton")
         self.button.move(0, a)
         a += 40
 
@@ -52,9 +52,16 @@ class ExampleApp:
 
         self.progressRing1 = LingmoPyUI.LingmoProgressRing(self.window)
         self.progressRing1.move(0,a)
-        self.progressRing2 = LingmoPyUI.LingmoProgressRing(self.window,progressVisible=True)
+        self.progressRing2 = LingmoPyUI.LingmoProgressRing(self.window,progressVisible=True,progress=0.5)
         self.progressRing2.setIndeterminate(False)
         self.progressRing2.move(60,a)
+        a+=64
+
+        self.loadingButton = LingmoPyUI.LingmoLoadingButton(self.window,loading=True)
+        self.loadingButton.setContent('LoadingButton')
+        self.loadingButton.move(0,a)
+        self.button.pressed.connect(lambda:self.loadingButton.setLoading(False))
+        a+=40
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
