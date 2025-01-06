@@ -63,6 +63,10 @@ class ExampleApp:
         self.button.pressed.connect(lambda:self.loadingButton.setLoading(False))
         a+=40
 
+        self.menu=LingmoPyUI.LingmoMenu()
+        self.window.pressed.connect(self.menu.hideMenu)
+        self.window.rightPressed.connect(self.menu.showMenu)
+
     def run(self):
         LingmoPyUI.LingmoApp.run()
 

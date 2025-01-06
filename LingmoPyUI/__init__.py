@@ -34,6 +34,12 @@ class LingmoAnimation(QVariantAnimation):
 		else:
 			(self.obj.__getattr__(self.attr))(value/self.precision)
 class LingmoFrame(QFrame):
+	pressed=Signal()
+	released=Signal()
+	hovered=Signal()
+	left=Signal()
+	rightPressed=Signal()
+	rightReleased=Signal()
 	def __init__(self,parent=None,show=True):
 		global widgetCount
 		super().__init__(parent)
@@ -46,6 +52,7 @@ class LingmoFrame(QFrame):
 		self.styleSheets={}
 		widgetCount+=1
 		self.setObjectName('LingmoWidget'+str(widgetCount))
+		self.ispressed=False
 	def __update__(self):
 		self.update()
 		styleSheetString='QFrame#'+self.objectName()+'{'
@@ -63,21 +70,20 @@ class LingmoFrame(QFrame):
 		self.styleSheets[name]=style
 	def isHovered(self):
 		return self.underMouse()
-class LingmoAbstractButton(LingmoFrame):
-	pressed=Signal()
-	released=Signal()
-	hovered=Signal()
-	left=Signal()
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
-		self.ispressed=False
 	def mousePressEvent(self, event):
 		if self.isEnabled():
-			self.pressed.emit()
+			self.setFocus()
+			if event.button()==Qt.MouseButton.LeftButton:
+				self.pressed.emit()
+			if event.button()==Qt.MouseButton.RightButton:
+				self.rightPressed.emit()
 			self.ispressed=True
 	def mouseReleaseEvent(self, event):
 		if self.isEnabled():
-			self.released.emit()
+			if event.button()==Qt.MouseButton.LeftButton:
+				self.released.emit()
+			if event.button()==Qt.MouseButton.RightButton:
+				self.rightReleased.emit()
 			self.ispressed=False
 	def enterEvent(self, event):
 		if self.isEnabled():
@@ -164,7 +170,7 @@ class LingmoAppBar(LingmoFrame):
 		super().__init__(parent,show)
 	def updateEvent(self):
 		pass
-class LingmoButton(LingmoAbstractButton):
+class LingmoButton(LingmoFrame):
 	def __init__(self,parent=None,show=True,content='',
 	normalColor=QColor(62,62,62,255)if LingmoTheme.instance.dark() else QColor(254,254,254,255),
 	hoverColor=QColor(68,68,68,255)if LingmoTheme.instance.dark() else QColor(246,246,246,255),
@@ -284,7 +290,7 @@ class LingmoDropDownBox(LingmoButton):
 		super().__init__(parent,show)
 	def updateEvent(self):
 		pass
-class LingmoFilledButton(LingmoAbstractButton):
+class LingmoFilledButton(LingmoFrame):
 	def __init__(self,parent=None,show=True,content=''):
 		super().__init__(parent,show)
 		self.content=content
@@ -366,7 +372,7 @@ class LingmoIcon(LingmoLabel):
 		self.iconSize=val
 	def setIconColor(self,val):
 		self.iconColor=val
-class LingmoIconButton(LingmoAbstractButton):
+class LingmoIconButton(LingmoFrame):
 	IconOnly=Qt.ToolButtonStyle.ToolButtonIconOnly
 	TextOnly=Qt.ToolButtonStyle.ToolButtonTextOnly
 	TextUnderIcon=Qt.ToolButtonStyle.ToolButtonTextUnderIcon
@@ -455,7 +461,7 @@ class LingmoIconButton(LingmoAbstractButton):
 	def setPaddings(self,hori,vert):
 		self.horizontalPadding=hori
 		self.verticalPadding=vert
-class LingmoImageButton(LingmoAbstractButton):
+class LingmoImageButton(LingmoFrame):
 	def __init__(self,normalImage: str,parent=None,show=True,hoveredImage: str|None = None,pushedImage: str|None = None):
 		super().__init__(parent,show)
 		self.normalImage=normalImage
@@ -502,16 +508,64 @@ class LingmoLoadingButton(LingmoButton):
 			self.ringWidthAnimation.start()
 		else:
 			self.ringWidth=val
-class LingmoMenu(LingmoFrame):
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
-	def updateEvent(self):
-		pass
 class LingmoMenuItem(LingmoFrame):
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
+	def __init__(self,parent=None):
+		super().__init__(parent)
 	def updateEvent(self):
 		pass
+class LingmoMenu(LingmoFrame):
+	def __init__(self,position=None,animationEnabled=True):
+		super().__init__(show=False)
+		self.animationEnabled=animationEnabled
+		self.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.ToolTip)
+		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+		self.opacity=0
+		self.background=LingmoFrame(self)
+		self.background.move(5,5)
+		self.background.addStyleSheet('background-color',QColor(45,45,45,255)if LingmoTheme.instance.dark()else QColor(252,252,252,255))
+		self.background.addStyleSheet('border-style','solid')
+		self.background.addStyleSheet('border-width',1)
+		self.background.addStyleSheet('border-color',QColor(26,26,26,255)if LingmoTheme.instance.dark() else QColor(191,191,191,255))
+		self.background.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius+1)
+		self.shadow=LingmoShadow(self.background,radius=LingmoTheme.instance._roundWindowRadius)
+		self.position=position
+		self.items: list[LingmoMenuItem] = []
+		self.showAnimation=LingmoAnimation(self,'opacity')
+		self.showAnimation.setStartValue(0)
+		self.showAnimation.setEndValue(1)
+		self.hideAnimation=LingmoAnimation(self,'opacity')
+		self.hideAnimation.setStartValue(1)
+		self.hideAnimation.setEndValue(0)
+		self.scrollbar=LingmoScrollBar(self,target=self.background,orientation=Qt.Orientation.Vertical)
+		self.scrollbar.setOffsetDecrease(5)
+		self.scrollbar.setOffsetIncrease(15)
+		self.scrollbar.setOffsetPerpendicalar(5)
+		self.scrolled=False
+	def updateEvent(self):
+		self.addStyleSheet('background-color','transparent')
+		self.setWindowOpacity(self.opacity)
+		self.resize(self.background.width()+10,100 if self.scrolled else self.background.height()+10)
+		self.scrollbar.setVisible(self.scrolled)
+	def showMenu(self):
+		pos=QCursor.pos() if self.position==None else self.position
+		self.move(pos)
+		self.show()
+		self.showAnimation.setDuration(83 if LingmoTheme.instance._animationEnabled and self.animationEnabled else 0)
+		self.showAnimation.start()
+	def hideMenu(self):
+		self.hideAnimation.setDuration(83 if LingmoTheme.instance._animationEnabled and self.animationEnabled else 0)
+		self.hideAnimation.start()
+		self.hide()
+	def flushItemsPosition(self):
+		for i in range(len(self.items)):
+			if i==0:
+				self.items[i].move(5,5)
+			else:
+				self.items[i].move(5,self.items[i-1].y()+self.items[i-1].height())
+		self.scrolled=len(self.items)>10
+	def addItem(self,item: LingmoMenuItem):
+		self.items.append(item)
+		self.flushItemsPosition()
 class LingmoObject(QObject):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)
@@ -639,7 +693,7 @@ class LingmoProgressRing(LingmoFrame):
 		painter=QPainter(self)
 		pen=QPen()
 		pen.setColor(self.color)
-		pen.setWidth(self.strokeWidth)
+		pen.setWidth(self.strokeWidth/6*7)
 		pen.setCapStyle(Qt.PenCapStyle.RoundCap)
 		painter.setPen(pen)
 		if self.indeterminate:
@@ -647,7 +701,7 @@ class LingmoProgressRing(LingmoFrame):
 				self.startAngle*16,self.sweepAngle*16)
 		else:
 			painter.drawArc(self.strokeWidth/2,self.strokeWidth/2,self.width()-self.strokeWidth,self.height()-self.strokeWidth,
-				-0.5*math.pi,-0.5*math.pi+self._progress*2*math.pi)
+				-0.5*math.pi,self._progress*360*16)
 	def setIndeterminate(self,val):
 		self.indeterminate=val
 		if val:
@@ -663,7 +717,7 @@ class LingmoRouter(LingmoFrame):
 		super().__init__(parent,show)
 	def updateEvent(self):
 		pass
-class LingmoScrollBar(LingmoAbstractButton):
+class LingmoScrollBar(LingmoFrame):
 	def __init__(self,parent=None,target:QWidget =None,show=True,orientation=Qt.Orientation.Horizontal,color=QColor(159,159,159,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)):
 		super().__init__(parent,show)
 		self.orientation=orientation
@@ -680,7 +734,7 @@ class LingmoScrollBar(LingmoAbstractButton):
 		self.horiIncrButton=LingmoIconButton(LingmoIconDef.CaretRightSolid8,parent=self)
 		self.vertDecrButton=LingmoIconButton(LingmoIconDef.CaretUpSolid8,parent=self)
 		self.vertIncrButton=LingmoIconButton(LingmoIconDef.CaretDownSolid8,parent=self)
-		self.bar=LingmoAbstractButton(self)
+		self.bar=LingmoFrame(self)
 		self.barWidth=self.minLine
 		self.horiDecrButton.setPaddings(2,2)
 		self.horiIncrButton.setPaddings(2,2)
@@ -704,6 +758,9 @@ class LingmoScrollBar(LingmoAbstractButton):
 		self.barFirstPos=QPoint()
 		self.bar.pressed.connect(lambda:self.setScrolling(True))
 		self.bar.released.connect(lambda:self.setScrolling(False))
+		self.offsetDecrease=0
+		self.offsetIncrease=0
+		self.offsetPerpendicular=0
 	def updateEvent(self):
 		self.horizontalPadding=15 if self.horizontal()else 3
 		self.verticalPadding=15 if self.vertical() else 3
@@ -738,9 +795,9 @@ class LingmoScrollBar(LingmoAbstractButton):
 		else:
 			self.bar.addStyleSheet('background-color',self.color)
 		self.bar.addStyleSheet('border-radius',self.barWidth/2)
-		self.resize(self.parentWidget().width()if self.horizontal()else self.horizontalPadding*2+self.vertDecrButton.width(),
-			self.parentWidget().height() if self.vertical() else self.verticalPadding*2+self.horiDecrButton.height())
-		self.move(0 if self.horizontal() else self.parentWidget().width()-self.width(),0 if self.vertical() else self.parentWidget().height()-self.height())
+		self.resize(self.parentWidget().width()-self.offsetDecrease-self.offsetIncrease if self.horizontal()else self.horizontalPadding*2+self.vertDecrButton.width(),
+			self.parentWidget().height()-self.offsetDecrease-self.offsetIncrease if self.vertical() else self.verticalPadding*2+self.horiDecrButton.height())
+		self.move(self.offsetDecrease if self.horizontal() else self.parentWidget().width()-self.width()-self.offsetPerpendicular,self.offsetDecrease if self.vertical() else self.parentWidget().height()-self.height()-self.offsetPerpendicular)
 		self.bar.setVisible(self.barSize<1)
 		self.visualPosition=self.position if self.barSize<1 else 0
 		self.target.move(-self.visualPosition*(self.target.width()-self.target.parentWidget().width())if self.horizontal() else self.target.x(),
@@ -788,6 +845,12 @@ class LingmoScrollBar(LingmoAbstractButton):
 		self.scrolling=val
 	def setOrientation(self,val):
 		self.orientation=val
+	def setOffsetDecrease(self,val):
+		self.offsetDecrease=val
+	def setOffsetIncrease(self,val):
+		self.offsetIncrease=val
+	def setOffsetPerpendicalar(self,val):
+		self.offsetPerpendicular=val
 class LingmoShadow(LingmoFrame):
 	def __init__(self,parent:QWidget=None,elevation=5,color=QColor(0,0,0,255),radius=4):
 		self.parentObject=parent
@@ -816,7 +879,7 @@ class LingmoSlider(LingmoFrame):
 		self.backgroundLength=180
 		self.backgroundWidth=6
 		self.addPage=LingmoFrame(self.background)
-		self.handle=LingmoAbstractButton(self)
+		self.handle=LingmoFrame(self)
 		self.horizontalPadding=10
 		self.verticalPadding=10
 		self.visualPosition=0.7
@@ -902,7 +965,7 @@ class LingmoText(LingmoLabel):
 		self.colorEnabled=val
 	def setColor(self,val):
 		self.color=val
-class LingmoTextButton(LingmoAbstractButton):
+class LingmoTextButton(LingmoFrame):
 	def __init__(self,parent=None,show=True,content='',normalColor=LingmoTheme.instance.primaryColor,
 			hoverColor: QColor = None,pressedColor: QColor = None,disableColor=QColor(82,82,82,255)if LingmoTheme.instance.dark() else QColor(199,199,199,255),
 			backgroundHoverColor=LingmoTheme.instance.itemHoverColor,
