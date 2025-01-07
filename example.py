@@ -66,6 +66,14 @@ class ExampleApp:
         self.menu=LingmoPyUI.LingmoMenu()
         self.window.pressed.connect(self.menu.hideMenu)
         self.window.rightPressed.connect(self.menu.showMenu)
+        
+        self.menuItem1=LingmoPyUI.LingmoMenuItem(content='MenuItem1_aaaaaaaaa')
+        self.menu.addItem(self.menuItem1)
+        self.menuItem2=LingmoPyUI.LingmoMenuItem(iconSource=LingmoPyUI.LingmoIconDef.Admin,content='MenuItem2')
+        self.menu.addItem(self.menuItem2)
+        self.subMenu=LingmoPyUI.LingmoMenu()
+        self.menuItem3=LingmoPyUI.LingmoMenuItem(content='MenuItem3',subMenu=self.subMenu)
+        self.menu.addItem(self.menuItem3)
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
