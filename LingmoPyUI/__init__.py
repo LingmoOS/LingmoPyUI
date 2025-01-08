@@ -593,7 +593,8 @@ class LingmoMenu(LingmoFrame):
 	def __init__(self,position=None,animationEnabled=True):
 		super().__init__(show=False)
 		self.animationEnabled=animationEnabled
-		self.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.ToolTip)
+		self.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.Tool)
+		self.scrolled=False
 		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 		self.opacity=0
 		self.background=LingmoFrame(self)
@@ -616,7 +617,6 @@ class LingmoMenu(LingmoFrame):
 		self.scrollbar.setOffsetDecrease(5)
 		self.scrollbar.setOffsetIncrease(15)
 		self.scrollbar.setOffsetPerpendicalar(5)
-		self.scrolled=False
 	def updateEvent(self):
 		self.addStyleSheet('background-color','transparent')
 		self.setWindowOpacity(self.opacity)
@@ -651,6 +651,8 @@ class LingmoMenu(LingmoFrame):
 		item.setParent(self.background)
 	def setPosition(self,val):
 		self.position=val
+	def focusOutEvent(self, event):
+		self.hideMenu()
 class LingmoObject(QObject):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)
