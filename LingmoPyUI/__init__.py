@@ -2,7 +2,6 @@ version='1.0.0'
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
-from numpy import isin
 from . import LingmoAccentColor
 from . import LingmoApp
 from . import LingmoColor
@@ -95,7 +94,7 @@ class LingmoFrame(QFrame):
 	def isPressed(self):
 		return self.ispressed
 class LingmoLabel(QLabel):
-	def __init__(self,parent=None,show=True):
+	def __init__(self,parent=None,show=True,autoAdjust=True):
 		global widgetCount
 		super().__init__(parent)
 		self.timer=QTimer()
@@ -108,6 +107,7 @@ class LingmoLabel(QLabel):
 		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 		widgetCount+=1
 		self.setObjectName('LingmoWidget'+str(widgetCount))
+		self.autoAdjust=autoAdjust
 	def __update__(self):
 		self.update()
 		styleSheetString='QLabel#'+self.objectName()+'{'
@@ -115,12 +115,15 @@ class LingmoLabel(QLabel):
 			styleSheetString+=i+': '+self.styleSheets[i]+';'
 		styleSheetString+='}'
 		self.setStyleSheet(styleSheetString)
-		self.adjustSize()
+		if self.autoAdjust:
+			self.adjustSize()
 	def updateEvent():
 		pass
 	def addStyleSheet(self,name,style):
 		if isinstance(style,int) or isinstance(style,float):
 			style=str(style)
+		if isinstance(style,QBrush):
+			style=style.color()
 		if isinstance(style,QColor):
 			style=style.name(QColor.NameFormat.HexArgb)
 		self.styleSheets[name]=style
@@ -352,8 +355,8 @@ class LingmoFocusRectangle(LingmoFrame):
 	def setBorderColor(self,val):
 		self.borderColor=val
 class LingmoIcon(LingmoLabel):
-	def __init__(self,iconSource,parent=None,show=True,iconSize=20,iconColor: QColor=QColor(255,255,255,255)if LingmoTheme.instance.dark() else QColor(0,0,0,255)):
-		super().__init__(parent,show)
+	def __init__(self,iconSource,parent=None,show=True,iconSize=20,iconColor: QColor=QColor(255,255,255,255)if LingmoTheme.instance.dark() else QColor(0,0,0,255),autoAdjust=False):
+		super().__init__(parent,show,autoAdjust)
 		self.iconSource=iconSource
 		self.iconSize=iconSize
 		self.iconColor=iconColor
@@ -510,29 +513,36 @@ class LingmoLoadingButton(LingmoButton):
 		else:
 			self.ringWidth=val
 class LingmoMenuItem(LingmoFrame):
-	def __init__(self,iconSource=None,subMenu=None,content='',autoClose=True):
+	def __init__(self,iconSource=None,subMenu=None,content='',autoClose=True,checkable=False,mirrored=False):
 		super().__init__(show=False)
 		self.iconSpacing=5
 		self.iconSource=iconSource
 		self.iconSize=16
-		self.indicator=LingmoIcon(LingmoIconDef.CheckMark,parent=self,show=False)
-		self.arrow=LingmoIcon(LingmoIconDef.ChevronRightMed,parent=self,show=False)
+		self.mirrored=mirrored
+		self.indicator=LingmoIcon(LingmoIconDef.CheckMark,parent=self,show=False,autoAdjust=True)
+		self.arrow=LingmoIcon(LingmoIconDef.ChevronRightMed,parent=self,show=False,autoAdjust=True)
 		self.text=LingmoText(self)
 		self.subMenu=subMenu
 		self.checked=False
-		self.checkable=False
+		self.checkable=checkable
 		self.pressed.connect(self.setChecked)
 		self.padding=6
 		self.iconWidth=24
 		self.iconHeight=24
 		self.content=content
 		if self.iconSource:
-			self.icon=LingmoIcon(self.iconSource,parent=self)
+			self.icon=LingmoIcon(self.iconSource,parent=self,iconSize=self.iconSize)
+			self.icon.resize(self.iconWidth,self.iconHeight)
 		else:
 			self.icon=LingmoFrame(self)
 		self.text.setText(self.content)
 		self.autoClose=autoClose
 		self.pressed.connect(self.onPressed)
+		self.resize(self.icon.width()+self.text.width()+3*self.padding,max(self.icon.height(),self.text.height())+2*self.padding if self.isVisible()else 0)
+		self.arrowPadding=self.arrow.width()+self.iconSpacing if self.subMenu else 0
+		self.indicatorPadding=self.indicator.width()+self.iconSpacing if self.checkable else 0
+		self.leftPadding= self.arrowPadding if self.mirrored else self.indicatorPadding
+		self.rightPadding= self.indicatorPadding if self.mirrored else self.arrowPadding
 	def updateEvent(self):
 		if LingmoTheme.instance.dark():
 			if self.isEnabled():
@@ -550,24 +560,35 @@ class LingmoMenuItem(LingmoFrame):
 					self.textColor=QColor(0,0,0,255)
 			else:
 				self.textColor=QColor(160,160,160,255)
+		self.arrowPadding=self.arrow.width()+self.iconSpacing if self.subMenu else 0
+		self.indicatorPadding=self.indicator.width()+self.iconSpacing if self.checkable else 0
+		self.leftPadding= self.arrowPadding if self.mirrored else self.indicatorPadding
+		self.rightPadding= self.indicatorPadding if self.mirrored else self.arrowPadding
 		self.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius)
 		self.addStyleSheet('background-color',(LingmoTheme.instance.itemHoverColor if self.isHovered() else LingmoTheme.instance.itemNormalColor))
 		if self.iconSource: 
-			self.icon.setGeometry(self.padding,self.padding,self.iconWidth,self.iconHeight)
+			self.icon.setGeometry(self.padding+self.leftPadding,self.padding,self.iconWidth,self.iconHeight)
 		else:
-			self.icon.setGeometry(self.padding,self.padding,0,0)
+			self.icon.setGeometry(self.padding+self.leftPadding,self.padding,0,0)
 		self.text.move(self.icon.x()+self.icon.width()+(self.padding if self.iconSource else 0),self.height()/2-self.text.height()/2)
-		self.resize(self.icon.width()+self.text.width()+3*self.padding,max(self.icon.height(),self.text.height())+2*self.padding if self.isVisible()else 0)
+		self.resize(self.width(),36 if self.isVisible()else 0)
 		self.indicator.setVisible(self.checked)
-		self.arrow.setVisible(bool(self.subMenu) and self.isHovered())
+		self.arrow.setVisible(bool(self.subMenu))
+		self.indicator.move(self.width()-self.rightPadding if self.mirrored else 6,self.height()/2-self.indicator.height()/2)
+		self.arrow.move(6 if self.mirrored else self.width()-self.rightPadding,self.height()/2-self.arrow.height()/2)
+		self.text.setFont(LingmoTextStyle.body)
+		if self.iconSource:
+			self.icon.setIconColor(self.palette().windowText())
 	def setChecked(self):
 		self.checked=not self.checked if self.checkable else False
 	def onPressed(self):
 		if self.subMenu and isinstance(self.subMenu,LingmoMenu):
-			self.subMenu.setPosition(self.mapToGlobal(QPoint(self.x()+self.width()+2,self.y())))
+			self.subMenu.setPosition(self.parentWidget().mapToGlobal(QPoint(self.x()+self.width()+2,self.y())))
 			self.subMenu.showMenu()
 		elif self.autoClose and isinstance(self.parentWidget().parentWidget(),LingmoMenu):
 			self.parentWidget().parentWidget().hideMenu()
+	def getWidth(self):
+		return self.icon.width()+self.text.width()+3*self.padding+self.leftPadding+self.rightPadding
 class LingmoMenu(LingmoFrame):
 	def __init__(self,position=None,animationEnabled=True):
 		super().__init__(show=False)
@@ -601,6 +622,17 @@ class LingmoMenu(LingmoFrame):
 		self.setWindowOpacity(self.opacity)
 		self.resize(self.background.width()+10,300 if self.scrolled else self.background.height()+10)
 		self.scrollbar.setVisible(self.scrolled)
+		maxWidth=0
+		for i in range(len(self.items)):
+			maxWidth=max(maxWidth,self.items[i].getWidth())
+			if i==0:
+				self.items[i].move(4,4)
+			else:
+				self.items[i].move(4,self.items[i-1].y()+self.items[i-1].height()+(4 if self.items[i-1].isVisible()else 0))
+		for i in range(len(self.items)):
+			self.items[i].resize(maxWidth,self.items[i].height())
+		self.scrolled=len(self.items)>10
+		self.background.resize(maxWidth+8,(self.items[-1].y()+self.items[-1].height()+4)if len(self.items)else 36)
 	def showMenu(self):
 		pos=QCursor.pos() if self.position==None else self.position
 		self.move(pos)
@@ -611,21 +643,12 @@ class LingmoMenu(LingmoFrame):
 		self.hideAnimation.setDuration(83 if LingmoTheme.instance._animationEnabled and self.animationEnabled else 0)
 		self.hideAnimation.start()
 		self.setVisible(False)
-	def flushItemsPosition(self):
-		maxWidth=0
-		for i in range(len(self.items)):
-			maxWidth=max(maxWidth,self.items[i].width())
-			if i==0:
-				self.items[i].move(4,4)
-			else:
-				self.items[i].move(4,self.items[i-1].y()+self.items[i-1].height()+(4 if self.items[i-1].isVisible()else 0))
-		self.scrolled=len(self.items)>10
-		self.background.resize(maxWidth,(self.items[-1].y()+self.items[-1].height()+2)if len(self.items)else 36)
+		for i in self.items:
+			if i.subMenu:
+				i.subMenu.hideMenu()
 	def addItem(self,item: LingmoMenuItem):
 		self.items.append(item)
-		item.show()
 		item.setParent(self.background)
-		self.flushItemsPosition()
 	def setPosition(self,val):
 		self.position=val
 class LingmoObject(QObject):
@@ -952,7 +975,7 @@ class LingmoSlider(LingmoFrame):
 		self.iconScale=1
 		self.value=0
 		self.shadow=LingmoShadow(self.handle,radius=10)
-		self.icon=LingmoIcon(LingmoIconDef.FullCircleMask,self.handle)
+		self.icon=LingmoIcon(LingmoIconDef.FullCircleMask,self.handle,autoAdjust=True)
 		self.iconScaleAnimation=LingmoAnimation(self,'iconScale')
 		self.iconScaleAnimation.setDuration(167)
 		self.iconScaleAnimation.setEasingCurve(QEasingCurve.Type.OutCubic)
@@ -1011,8 +1034,8 @@ class LingmoSlider(LingmoFrame):
 	def setOrientation(self,val):
 		self.orientation=val
 class LingmoText(LingmoLabel):
-	def __init__(self,parent=None,show=True,text='',color=LingmoTheme.instance.fontPrimaryColor):
-		super().__init__(parent,show)
+	def __init__(self,parent=None,show=True,text='',color=LingmoTheme.instance.fontPrimaryColor,autoAdjust=True):
+		super().__init__(parent,show,autoAdjust=autoAdjust)
 		self.colorEnabled=True
 		self.color=color
 		self.renderType=Qt.TextFormat.PlainText if LingmoTheme.instance._nativeText else Qt.TextFormat.AutoText
@@ -1020,7 +1043,6 @@ class LingmoText(LingmoLabel):
 		self.setFont(LingmoTextStyle.body)
 		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 	def updateEvent(self):
-		self.adjustSize()
 		self.addStyleSheet('color',QColor(self.color if self.colorEnabled else (qRgba(131,131,131,255)if LingmoTheme.instance.dark()else qRgba(160,160,160,255))))
 		self.setTextFormat(self.renderType)
 	def setColorEnabled(self,val: bool):
