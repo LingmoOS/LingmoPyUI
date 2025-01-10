@@ -843,11 +843,6 @@ class LingmoProgressRing(LingmoFrame):
 			self.sweepAngleAnimation.stop()
 	def setProgress(self,val):
 		self.visualPosition=val
-class LingmoRouter(LingmoFrame):
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
-	def updateEvent(self):
-		pass
 class LingmoScrollBar(LingmoFrame):
 	def __init__(self,parent=None,target:QWidget =None,show=True,orientation=Qt.Orientation.Horizontal,color=QColor(159,159,159,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)):
 		super().__init__(parent,show)
