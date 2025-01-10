@@ -1,4 +1,5 @@
 version='1.0.0'
+from enum import auto
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -290,10 +291,39 @@ class LingmoControlBackground(LingmoFrame):
 		self.borderColor=val
 		self.borderColorUnsetted=False
 class LingmoDropDownBox(LingmoButton):
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
+	def __init__(self,parent=None,show=True,content=''):
+		super().__init__(parent,show,autoResize=False,content=content)
+		self.icon=LingmoIcon(LingmoIconDef.ChevronDown,self,iconSize=15,autoAdjust=True)
+		self.menu=LingmoMenu(autoResize=False)
+		self.menu.showed.connect(self.onAboutToShow)
+		self.menu.hided.connect(self.onAboutToHide)
+		self.pressed.connect(self.showMenu)
+		self.parentWidget().pressed.connect(self.hideMenu)
 	def updateEvent(self):
-		pass
+		super().updateEvent()
+		self.icon.move(self.ctrlBg.x()+self.ctrlBg.width()-20,self.height()/2-self.icon.height()/2)
+		self.menu.background.resize(self.ctrlBg.width(),self.menu.background.height())
+		self.ctrlBg.resize(self.contentText.x()+self.contentText.width()+self.icon.width(),self.height())
+	def showMenu(self):
+		if self.menu.count() and not self.menu.isVisible():
+			pos=self.ctrlBg.mapToGlobal(QPoint(0,0))
+			containerHeight=self.menu.background.height()
+			if self.window().height()>pos.y()+self.height()+containerHeight:
+				self.menu.setPosition(self.mapToGlobal(QPoint(self.ctrlBg.x()/2,self.height())))
+			elif pos.y()>containerHeight:
+				self.menu.setPosition(self.mapToGlobal(QPoint(self.ctrlBg.x()/2,-containerHeight)))
+			else:
+				self.menu.setPosition(self.mapToGlobal(QPoint(self.ctrlBg.x()/2,self.window().height()-(pos.y()+containerHeight))))
+			self.menu.showMenu()
+	def hideMenu(self):
+		if not self.isHovered():
+			self.menu.hideMenu()
+	def addItem(self,item):
+		self.menu.addItem(item)
+	def onAboutToShow(self):
+		self.icon.setIconSource(LingmoIconDef.ChevronUp)
+	def onAboutToHide(self):
+		self.icon.setIconSource(LingmoIconDef.ChevronDown)
 class LingmoFilledButton(LingmoFrame):
 	def __init__(self,parent=None,show=True,content=''):
 		super().__init__(parent,show)
@@ -590,7 +620,9 @@ class LingmoMenuItem(LingmoFrame):
 	def getWidth(self):
 		return self.icon.width()+self.text.width()+3*self.padding+self.leftPadding+self.rightPadding
 class LingmoMenu(LingmoFrame):
-	def __init__(self,position=None,animationEnabled=True):
+	showed=Signal()
+	hided=Signal()
+	def __init__(self,position=None,animationEnabled=True,autoResize=True):
 		super().__init__(show=False)
 		self.animationEnabled=animationEnabled
 		self.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.Tool)
@@ -615,8 +647,9 @@ class LingmoMenu(LingmoFrame):
 		self.hideAnimation.setEndValue(0)
 		self.scrollbar=LingmoScrollBar(self,target=self.background,orientation=Qt.Orientation.Vertical)
 		self.scrollbar.setOffsetDecrease(5)
-		self.scrollbar.setOffsetIncrease(15)
+		self.scrollbar.setOffsetIncrease(5)
 		self.scrollbar.setOffsetPerpendicalar(5)
+		self.autoResize=autoResize
 	def updateEvent(self):
 		self.addStyleSheet('background-color','transparent')
 		self.setWindowOpacity(self.opacity)
@@ -629,16 +662,23 @@ class LingmoMenu(LingmoFrame):
 				self.items[i].move(4,4)
 			else:
 				self.items[i].move(4,self.items[i-1].y()+self.items[i-1].height()+(4 if self.items[i-1].isVisible()else 0))
-		for i in range(len(self.items)):
-			self.items[i].resize(maxWidth,self.items[i].height())
+		if self.autoResize:
+			
+			for i in range(len(self.items)):
+				self.items[i].resize(maxWidth,self.items[i].height())
+			self.background.resize(maxWidth+8,(self.items[-1].y()+self.items[-1].height()+4)if len(self.items)else 36)
+		else:
+			for i in range(len(self.items)):
+				self.items[i].resize(self.background.width()-8,self.items[i].height())
+			self.background.resize(self.background.width(),(self.items[-1].y()+self.items[-1].height()+4)if len(self.items)else 36)
 		self.scrolled=len(self.items)>10
-		self.background.resize(maxWidth+8,(self.items[-1].y()+self.items[-1].height()+4)if len(self.items)else 36)
 	def showMenu(self):
 		pos=QCursor.pos() if self.position==None else self.position
 		self.move(pos)
 		self.setVisible(True)
 		self.showAnimation.setDuration(83 if LingmoTheme.instance._animationEnabled and self.animationEnabled else 0)
 		self.showAnimation.start()
+		self.showed.emit()
 	def hideMenu(self):
 		self.hideAnimation.setDuration(83 if LingmoTheme.instance._animationEnabled and self.animationEnabled else 0)
 		self.hideAnimation.start()
@@ -646,6 +686,7 @@ class LingmoMenu(LingmoFrame):
 		for i in self.items:
 			if i.subMenu:
 				i.subMenu.hideMenu()
+		self.hided.emit()
 	def addItem(self,item: LingmoMenuItem):
 		self.items.append(item)
 		item.setParent(self.background)
@@ -653,6 +694,8 @@ class LingmoMenu(LingmoFrame):
 		self.position=val
 	def focusOutEvent(self, event):
 		self.hideMenu()
+	def count(self):
+		return len(self.items)
 class LingmoObject(QObject):
 	def __init__(self,parent=None,show=True):
 		super().__init__(parent,show)

@@ -2,70 +2,70 @@ import LingmoPyUI
 
 class ExampleApp:
     def __init__(self):
-        self.frame = LingmoPyUI.LingmoFrame()
-        self.window = LingmoPyUI.LingmoFrame(self.frame)
+        self.window = LingmoPyUI.LingmoFrame()
+        self.frame = LingmoPyUI.LingmoFrame(self.window)
         self.setup_ui()
 
     def setup_ui(self):
-        self.window.resize(500, 1000)
-        self.window.setWindowTitle('Example')
-        self.window.addStyleSheet("background-color", "green")
+        self.frame.resize(500, 1000)
+        self.frame.setWindowTitle('Example')
+        self.frame.addStyleSheet("background-color", "green")
 
-        self.frame.resize(500, 500)
+        self.window.resize(500, 500)
 
         a = 0
 
-        self.button = LingmoPyUI.LingmoButton(self.window)
+        self.button = LingmoPyUI.LingmoButton(self.frame)
         self.button.setContent("LingmoButton")
         self.button.move(0, a)
         a += 40
 
-        self.slider1 = LingmoPyUI.LingmoSlider(self.window)
+        self.slider1 = LingmoPyUI.LingmoSlider(self.frame)
         self.slider1.move(0, a)
         a += 40
 
-        self.slider2 = LingmoPyUI.LingmoSlider(self.window)
+        self.slider2 = LingmoPyUI.LingmoSlider(self.frame)
         self.slider2.setOrientation(LingmoPyUI.Qt.Orientation.Vertical)
         self.slider2.move(0, a)
         a += 200
 
         self.iconButton = LingmoPyUI.LingmoIconButton(
-            LingmoPyUI.LingmoIconDef.Accept, self.window, content="IconButton"
+            LingmoPyUI.LingmoIconDef.Accept, self.frame, content="IconButton"
         )
         self.iconButton.setDisplay(LingmoPyUI.LingmoIconButton.TextBesideIcon)
         self.iconButton.move(0,a)
         a += 40
 
-        self.scrollbar = LingmoPyUI.LingmoScrollBar(self.frame, target=self.window)
+        self.scrollbar = LingmoPyUI.LingmoScrollBar(self.window, target=self.frame)
         self.scrollbar.setOrientation(LingmoPyUI.Qt.Orientation.Vertical)
 
         self.tooltip = LingmoPyUI.LingmoToolTip(self.button, content="ToolTip")
 
-        self.progressButton = LingmoPyUI.LingmoProgressButton(self.window,content='Progress',progress=0.5)
+        self.progressButton = LingmoPyUI.LingmoProgressButton(self.frame,content='Progress',progress=0.5)
         self.progressButton.move(0,a)
         self.progressButton.pressed.connect(self.progress)
         a+=40
 
-        self.filledButton = LingmoPyUI.LingmoFilledButton(self.window,content='Filled')
+        self.filledButton = LingmoPyUI.LingmoFilledButton(self.frame,content='Filled')
         self.filledButton.move(0,a)
         a+=40
 
-        self.progressRing1 = LingmoPyUI.LingmoProgressRing(self.window)
+        self.progressRing1 = LingmoPyUI.LingmoProgressRing(self.frame)
         self.progressRing1.move(0,a)
-        self.progressRing2 = LingmoPyUI.LingmoProgressRing(self.window,progressVisible=True,progress=0.5)
+        self.progressRing2 = LingmoPyUI.LingmoProgressRing(self.frame,progressVisible=True,progress=0.5)
         self.progressRing2.setIndeterminate(False)
         self.progressRing2.move(60,a)
         a+=64
 
-        self.loadingButton = LingmoPyUI.LingmoLoadingButton(self.window,loading=True)
+        self.loadingButton = LingmoPyUI.LingmoLoadingButton(self.frame,loading=True)
         self.loadingButton.setContent('LoadingButton')
         self.loadingButton.move(0,a)
         self.button.pressed.connect(lambda:self.loadingButton.setLoading(False))
         a+=40
 
         self.menu=LingmoPyUI.LingmoMenu()
-        self.window.pressed.connect(self.menu.hideMenu)
-        self.window.rightPressed.connect(self.menu.showMenu)
+        self.frame.pressed.connect(self.menu.hideMenu)
+        self.frame.rightPressed.connect(self.menu.showMenu)
         
         self.menuItem1=LingmoPyUI.LingmoMenuItem(content='Simple MenuItem')
         self.menu.addItem(self.menuItem1)
@@ -78,6 +78,14 @@ class ExampleApp:
         self.menu.addItem(self.menuItem4)
         self.menuItem5=LingmoPyUI.LingmoMenuItem(content='Sub MenuItem')
         self.subMenu.addItem(self.menuItem5)
+
+        a=0
+        self.dropDownBox=LingmoPyUI.LingmoDropDownBox(self.frame,content='DropDownBox')
+        self.dropDownBox.move(200,a)
+        for i in range(1,21):
+            item=LingmoPyUI.LingmoMenuItem(content='Item'+str(i))
+            self.dropDownBox.addItem(item)
+        a+=40
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
