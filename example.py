@@ -1,6 +1,6 @@
 import LingmoPyUI
 
-class ExampleApp:
+class ExampleApp():
     def __init__(self):
         self.window = LingmoPyUI.LingmoFrame()
         self.frame = LingmoPyUI.LingmoFrame(self.window)

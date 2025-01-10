@@ -13,6 +13,7 @@ from .LingmoRectangle import LingmoRectangle
 from . import LingmoTextStyle
 from . import LingmoTheme
 from . import LingmoTools
+from . import LingmoUnits
 import math
 timerDelay=0
 widgetCount=0
