@@ -86,6 +86,7 @@ class ExampleApp():
             item=LingmoPyUI.LingmoMenuItem(content='Item'+str(i))
             self.dropDownBox.addItem(item)
         a+=40
+        print(LingmoPyUI.widgetCount)
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
