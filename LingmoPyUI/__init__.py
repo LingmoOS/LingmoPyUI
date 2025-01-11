@@ -13,7 +13,7 @@ from . import LingmoTheme
 from . import LingmoTools
 from . import LingmoUnits
 import math
-timerDelay=0.5
+timerDelay=1
 widgetCount=0
 class LingmoAnimation(QVariantAnimation):
 	Variable=1
@@ -103,6 +103,13 @@ class LingmoFrame(QFrame):
 			self.needUpdate.emit()
 		return super().event(e)
 class LingmoLabel(QLabel):
+	pressed=Signal()
+	released=Signal()
+	hovered=Signal()
+	left=Signal()
+	rightPressed=Signal()
+	rightReleased=Signal()
+	needUpdate=Signal()
 	def __init__(self,parent=None,show=True,autoAdjust=True):
 		global widgetCount
 		super().__init__(parent)
@@ -138,6 +145,37 @@ class LingmoLabel(QLabel):
 		self.styleSheets[name]=style
 	def isHovered(self):
 		return self.underMouse()
+	def mousePressEvent(self, event):
+		if self.isEnabled():
+			self.setFocus()
+			if event.button()==Qt.MouseButton.LeftButton:
+				self.pressed.emit()
+			if event.button()==Qt.MouseButton.RightButton:
+				self.rightPressed.emit()
+			self.ispressed=True
+		self.needUpdate.emit()
+	def mouseReleaseEvent(self, event):
+		if self.isEnabled():
+			if event.button()==Qt.MouseButton.LeftButton:
+				self.released.emit()
+			if event.button()==Qt.MouseButton.RightButton:
+				self.rightReleased.emit()
+			self.ispressed=False
+		self.needUpdate.emit()
+	def enterEvent(self, event):
+		if self.isEnabled():
+			self.hovered.emit()
+		self.needUpdate.emit()
+	def leaveEvent(self, event):
+		if self.isEnabled():
+			self.left.emit()
+		self.needUpdate.emit()
+	def isPressed(self):
+		return self.ispressed
+	def event(self, e):
+		if e.type!=e.Type.Paint:
+			self.needUpdate.emit()
+		return super().event(e)
 class LingmoAcrylic(LingmoFrame):
 	def __init__(self,parent=None,show=True,tintColor=QColor(255,255,255,255),luminosity=0.01,noiseOpacity=0.02,target:QWidget=None,blurRadius=32,targetRect: QRect =None):
 		super().__init__(parent,show)
@@ -208,6 +246,7 @@ class LingmoAppBar(LingmoFrame):
 		self.icon=QSystemTrayIcon.MessageIcon.Information
 		self.iconSize=20
 		self.isMac=LingmoTools.isMacos()
+		self.borderlessColor=LingmoTheme.instance.primaryColor
 	def updateEvent(self):
 		try:
 			self.raise_()
@@ -371,7 +410,8 @@ class LingmoDropDownBox(LingmoButton):
 			self.moveMenu()
 			self.menu.showMenu()
 	def hideMenu(self):
-		self.menu.hideMenu()
+		if not self.menu.isHovered():
+			self.menu.hideMenu()
 	def addItem(self,item):
 		self.menu.addItem(item)
 	def onAboutToShow(self):
@@ -504,6 +544,7 @@ class LingmoIconButton(LingmoFrame):
 		self.iconColorUnsetted=True
 		self.horizontalPadding=8
 		self.verticalPadding=8
+		self.icon.pressed.connect(self.pressed.emit)
 	def updateEvent(self):
 		try:
 			self.tooltip.setDisabled(self.content==''or self.display!=self.IconOnly)
@@ -569,6 +610,7 @@ class LingmoImageButton(LingmoFrame):
 		self.pushedImage=self.normalImage if pushedImage==None else pushedImage
 		self.image=LingmoLabel(self)
 		self.resize(12,12)
+		self.image.pressed.connect(self.pressed.emit)
 	def updateEvent(self):
 		try:
 			self.resize(self.size())
@@ -636,7 +678,7 @@ class LingmoMenuItem(LingmoFrame):
 		self.iconHeight=24
 		self.content=content
 		if self.iconSource:
-			self.icon=LingmoIcon(self.iconSource,parent=self,iconSize=self.iconSize)
+			self.icon=LingmoIcon(self.iconSource,parent=self,iconSize=self.iconSize,autoAdjust=True)
 			self.icon.resize(self.iconWidth,self.iconHeight)
 		else:
 			self.icon=LingmoFrame(self)
@@ -982,10 +1024,10 @@ class LingmoScrollBar(LingmoFrame):
 			self.horiIncrButton.setVisible(self.horizontal())
 			self.vertDecrButton.setVisible(self.vertical())
 			self.vertIncrButton.setVisible(self.vertical())
-			self.horiDecrButton.setIconBorderSize(12,12)
-			self.horiIncrButton.setIconBorderSize(12,12)
-			self.vertDecrButton.setIconBorderSize(12,12)
-			self.vertIncrButton.setIconBorderSize(12,12)
+			self.horiDecrButton.setIconBorderSize(8,8)
+			self.horiIncrButton.setIconBorderSize(8,8)
+			self.vertDecrButton.setIconBorderSize(8,8)
+			self.vertIncrButton.setIconBorderSize(8,8)
 			self.horiDecrButton.setIconSize(8)
 			self.horiIncrButton.setIconSize(8)
 			self.vertDecrButton.setIconSize(8)
@@ -1074,6 +1116,7 @@ class LingmoShadow(LingmoFrame):
 		self.color=color
 		self.radius=radius
 		self.widgets=[LingmoFrame(self.parentObject.parentWidget()) for i in range(self.elevation)]
+		self.timer.timeout.connect(self.updateEvent)
 	def updateEvent(self):
 		try:
 			geometry=self.parentObject.geometry()
