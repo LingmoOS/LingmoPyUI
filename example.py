@@ -90,7 +90,10 @@ class ExampleApp():
         print(LingmoPyUI.widgetCount)
 
         self.infoBar=LingmoPyUI.LingmoInfoBar(self.window)
-        self.loadingButton.pressed.connect(lambda:self.infoBar.showInfo('This is all the widgets',1500))
+        self.loadingButton.pressed.connect(lambda:self.infoBar.showSuccess('This is all the widgets',1500,'OK'))
+        self.loadingButton.pressed.connect(lambda:self.infoBar.showWarning('This is all the widgets',1500,'OK'))
+        self.loadingButton.pressed.connect(lambda:self.infoBar.showInfo('This is all the widgets',1500,'OK'))
+        self.loadingButton.pressed.connect(lambda:self.infoBar.showError('This is all the widgets',1500,'OK'))
 
     def run(self):
         LingmoPyUI.LingmoApp.run()

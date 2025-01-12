@@ -1,8 +1,9 @@
 version='1.0.0'
+import threading
+import time
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
-from networkx import eccentricity
 from . import LingmoAccentColor
 from . import LingmoApp
 from . import LingmoColor
@@ -74,7 +75,6 @@ class LingmoFrame(QFrame):
 		return self.underMouse()
 	def mousePressEvent(self, event):
 		if self.isEnabled():
-			self.setFocus()
 			if event.button()==Qt.MouseButton.LeftButton:
 				self.pressed.emit()
 			if event.button()==Qt.MouseButton.RightButton:
@@ -148,7 +148,6 @@ class LingmoLabel(QLabel):
 		return self.underMouse()
 	def mousePressEvent(self, event):
 		if self.isEnabled():
-			self.setFocus()
 			if event.button()==Qt.MouseButton.LeftButton:
 				self.pressed.emit()
 			if event.button()==Qt.MouseButton.RightButton:
@@ -284,6 +283,7 @@ class LingmoButton(LingmoFrame):
 		self.contentText.setFont(self.font())
 		self.clickShadowChange=clickShadowChange
 		self.autoResize=autoResize
+		self.contentText.pressed.connect(self.pressed.emit)
 	def updateEvent(self):
 		try:
 			if self.isEnabled():
@@ -635,7 +635,7 @@ class LingmoInfoBar(QObject):
 				self.posy=0
 				self.maxWidth=maxWidth
 				super().__init__(parent=root)
-				self.addStyleSheet('background-color','blue')
+				self.addStyleSheet('background-color','transparent')
 				self.posYAnimation=LingmoAnimation(self,'posy')
 				self.posYAnimation.setEasingCurve(QEasingCurve.Type.OutCubic)
 				self.posYAnimation.setDuration(333 if LingmoTheme.instance._animationEnabled else 0)
@@ -670,13 +670,18 @@ class LingmoInfoBar(QObject):
 				self.moremsg=moremsg
 				self.delayTimer=QTimer()
 				self.delayTimer.setInterval(self.duration)
-				self.delayTimer.start()
 				self.delayTimer.timeout.connect(self.close)
 				self.itemcomponent=itemcomponent if itemcomponent else LingmoInfoBar.Mcontrol.LingmoStyle(self)
 				self.itemcomponent.setParent(self)
+				self.delayTimer.start()
+				self.canBeClosed=False
 			def close(self):
-				print(1)
-				self.destroy()
+				if self.canBeClosed:
+					self.delayTimer.deleteLater()
+					self.destroy()
+					self.deleteLater()
+				else:
+					self.canBeClosed=True
 			def restart(self):
 				self.delayTimer.stop()
 				self.delayTimer.start()
@@ -712,7 +717,7 @@ class LingmoInfoBar(QObject):
 				self.moreMsg.setWordWrap(True)
 				self.moreMsg.setVisible(parent.moremsg!='')
 				self.moreMsg.setColor(LingmoColor._Grey120)
-				self.btnClose.pressed.connect(parent.close())
+				self.btnClose.pressed.connect(parent.close)
 				self.btnClose.setIconBorderSize(30,20)
 				self.btnClose.setPaddings(0,0)
 				self.btnClose.setIconColor(QColor(222,222,222,255)if LingmoTheme.instance.dark()else QColor(97,97,97,255))
