@@ -2,6 +2,7 @@ version='1.0.0'
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+from networkx import eccentricity
 from . import LingmoAccentColor
 from . import LingmoApp
 from . import LingmoColor
@@ -622,14 +623,222 @@ class LingmoImageButton(LingmoFrame):
 				self.image.setPixmap(QPixmap(self.normalImage))
 		except:
 			pass
-class LingmoInfoBar(LingmoFrame):
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
-	def updateEvent(self):
-		try:
-			pass
-		except:
-			pass
+class LingmoInfoBar(QObject):
+	class Mcontrol(QObject):
+		const_success='success'
+		const_info='info'
+		const_warning='warning'
+		const_error='error'
+		class ScreenlayoutComponent(LingmoFrame):
+			def __init__(self,root:QWidget,maxWidth=300):
+				self.spacing=20
+				self.posy=0
+				self.maxWidth=maxWidth
+				super().__init__(parent=root)
+				self.addStyleSheet('background-color','blue')
+				self.posYAnimation=LingmoAnimation(self,'posy')
+				self.posYAnimation.setEasingCurve(QEasingCurve.Type.OutCubic)
+				self.posYAnimation.setDuration(333 if LingmoTheme.instance._animationEnabled else 0)
+			def updateEvent(self):
+				self.raise_()
+				if len(self.children()) and isinstance(self.children()[0],QWidget):
+					self.resize(self.parentWidget().width(),len(self.children())*(self.children()[0].height()+self.spacing)+self.spacing)
+				else:
+					self.resize(self.parentWidget().width(),self.spacing)
+				self.move(self.x(),self.posy)
+				for i in range(len(self.children())):
+					self.children()[i].move(20,i*(self.children()[i].height()+20))
+			def childEvent(self, event):
+				if len(self.children())==0:
+					self.destroy()
+			def setPos(self,x,y):
+				self.move(x,self.posy)
+				self.posYAnimation.setStartValue(self.posy)
+				self.posYAnimation.setEndValue(y)
+				self.posYAnimation.start()
+			def getLastLoader(self):
+				if len(self.children()):
+					return self.children()[-1]
+				else:
+					return None
+		class ContentComponent(LingmoFrame):
+			def __init__(self,parent,duration=1500,itemcomponent: QWidget =None,type='',text='',moremsg=''):
+				super().__init__(parent)
+				self.duration=duration
+				self.type=type
+				self.text=text
+				self.moremsg=moremsg
+				self.delayTimer=QTimer()
+				self.delayTimer.setInterval(self.duration)
+				self.delayTimer.start()
+				self.delayTimer.timeout.connect(self.close)
+				self.itemcomponent=itemcomponent if itemcomponent else LingmoInfoBar.Mcontrol.LingmoStyle(self)
+				self.itemcomponent.setParent(self)
+			def close(self):
+				print(1)
+				self.destroy()
+			def restart(self):
+				self.delayTimer.stop()
+				self.delayTimer.start()
+			def updateEvent(self):
+				self.resize(self.parentWidget().size())
+		class LingmoStyle(LingmoFrame):
+			def __init__(self,parent=None):
+				if not isinstance(parent,LingmoInfoBar.Mcontrol.ContentComponent):
+					print('LingmoInfoBar.Mcontrol.LingmoStyle: parent must be LingmoInfoBar.Mcontrol.ContentComponent')
+					return
+				self.color=QColor()
+				self.borderColor=QColor()
+				self.iconColor=QColor()
+				if parent.type==LingmoInfoBar.Mcontrol.const_success:
+					self.iconSource=LingmoIconDef.CompletedSolid
+				elif parent.type==LingmoInfoBar.Mcontrol.const_warning:
+					self.iconSource=LingmoIconDef.InfoSolid
+				elif parent.type==LingmoInfoBar.Mcontrol.const_info:
+					self.iconSource=LingmoIconDef.InfoSolid
+				elif parent.type==LingmoInfoBar.Mcontrol.const_error:
+					self.iconSource=LingmoIconDef.StatusErrorFull
+				else:
+					self.iconSource=LingmoIconDef.InfoSolid
+				super().__init__(parent=parent)
+				self.shadow=LingmoShadow(self,radius=4)
+				self.icon=LingmoIcon(self.iconSource,parent=self,iconSize=20)
+				self.btnClose=LingmoIconButton(LingmoIconDef.ChromeClose,parent=self,iconSize=10)
+				self.text=LingmoText(self,text=parent.text)
+				self.moreMsg=LingmoText(self,text=parent.moremsg)
+				self.text.setWordWrap(True)
+				self.text.setFixedWidth(self.parentWidget().parentWidget().maxWidth)
+				self.moreMsg.setFixedWidth(self.parentWidget().parentWidget().maxWidth)
+				self.moreMsg.setWordWrap(True)
+				self.moreMsg.setVisible(parent.moremsg!='')
+				self.moreMsg.setColor(LingmoColor._Grey120)
+				self.btnClose.pressed.connect(parent.close())
+				self.btnClose.setIconBorderSize(30,20)
+				self.btnClose.setPaddings(0,0)
+				self.btnClose.setIconColor(QColor(222,222,222,255)if LingmoTheme.instance.dark()else QColor(97,97,97,255))
+				self.btnClose.setVisible(parent.duration<=0)
+			def updateEvent(self):
+				try:
+					if LingmoTheme.instance.dark():
+						if self.parentWidget().type==LingmoInfoBar.Mcontrol.const_success:
+							self.color=QColor(57,61,27,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_warning:
+							self.color=QColor(67,53,25,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_info:
+							self.color=QColor(39,39,39,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_error:
+							self.color=QColor(68,39,38,255)
+						else:
+							self.color=QColor(255,255,255,255)
+					else:
+						if self.parentWidget().type==LingmoInfoBar.Mcontrol.const_success:
+							self.color=QColor(223,246,221,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_warning:
+							self.color=QColor(255,244,206,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_info:
+							self.color=QColor(244,244,244,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_error:
+							self.color=QColor(253,251,233,255)
+						else:
+							self.color=QColor(255,255,255,255)
+					if LingmoTheme.instance.dark():
+						if self.parentWidget().type==LingmoInfoBar.Mcontrol.const_success:
+							self.borderColor=QColor(56,61,27,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_warning:
+							self.borderColor=QColor(66,53,25,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_info:
+							self.borderColor=QColor(38,39,39,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_error:
+							self.borderColor=QColor(67,39,38,255)
+						else:
+							self.borderColor=QColor(255,255,255,255)
+					else:
+						if self.parentWidget().type==LingmoInfoBar.Mcontrol.const_success:
+							self.borderColor=QColor(210,61,27,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_warning:
+							self.borderColor=QColor(240,53,25,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_info:
+							self.borderColor=QColor(230,39,39,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_error:
+							self.borderColor=QColor(238,39,38,255)
+						else:
+							self.borderColor=QColor(255,255,255,255)
+					if LingmoTheme.instance.dark():
+						if self.parentWidget().type==LingmoInfoBar.Mcontrol.const_success:
+							self.iconColor=QColor(108,203,95,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_warning:
+							self.iconColor=QColor(252,225,0,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_info:
+							self.iconColor=LingmoTheme.instance.primaryColor
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_error:
+							self.iconColor=QColor(255,153,164,255)
+						else:
+							self.iconColor=QColor(255,255,255,255)
+					else:
+						if self.parentWidget().type==LingmoInfoBar.Mcontrol.const_success:
+							self.iconColor=QColor(15,123,15,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_warning:
+							self.iconColor=QColor(157,93,0,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_info:
+							self.iconColor=QColor(0,102,180,255)
+						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_error:
+							self.iconColor=QColor(196,43,28,255)
+						else:
+							self.iconColor=QColor(255,255,255,255)
+					self.addStyleSheet('background-color',self.color)
+					self.addStyleSheet('border-color',self.borderColor)
+					self.addStyleSheet('border-width',1)
+					self.addStyleSheet('border-style','solid')
+					self.addStyleSheet('border-radius',4)
+					self.icon.setIconColor(self.iconColor)
+					self.icon.move((self.width()-(self.moreMsg.x()+self.moreMsg.width()-self.icon.x()))/2,10)
+					self.text.move(self.icon.x()+self.icon.width()+10,self.icon.y())
+					self.moreMsg.move(self.icon.x()+self.icon.width(),self.text.y()+self.text.height()+5)
+					self.resize(self.text.x()+self.text.width()+30 if self.btnClose.isVisible()else 48,max(self.icon.y()+self.icon.height(),self.moreMsg.y()+self.moreMsg.height())+10)
+				except:
+					pass
+		def __init__(self,root):
+			super().__init__()
+			self.root=root
+			self.maxwidth=300
+			self.screenLayout: LingmoInfoBar.Mcontrol.ScreenlayoutComponent =None
+		def create(self,type,text,duration,moremsg):
+			if self.screenLayout:
+				last=self.screenLayout.getLastLoader()
+				if last.type==type and last.text==text and last.moremsg==moremsg:
+					last.duration=duration
+					if duration>0:
+						last.restart()
+					return last
+			self.initScreenLayout()
+			return self.ContentComponent(self.screenLayout,type=type,text=text,duration=duration,moremsg=moremsg)
+		def createCustom(self,itemcomponent,duration):
+			self.initScreenLayout()
+			if itemcomponent:
+				return self.ContentComponent(self.screenLayout,duration=duration,itemcomponent=itemcomponent)
+		def initScreenLayout(self):
+			if self.screenLayout==None:
+				self.screenLayout=self.ScreenlayoutComponent(self.root,maxWidth=self.maxwidth)
+				self.screenLayout.move(self.screenLayout.x(),75)
+	def __init__(self,root):
+		super().__init__()
+		self.root=root
+		self.layoutY=75
+		self.mcontrol=self.Mcontrol(self.root)
+	def showSuccess(self,text,duration=1000,moremsg=''):
+		return self.mcontrol.create(self.mcontrol.const_success,text,duration,moremsg if moremsg else '')
+	def showInfo(self,text,duration=1000,moremsg=''):
+		return self.mcontrol.create(self.mcontrol.const_info,text,duration,moremsg if moremsg else '')
+	def showWarning(self,text,duration=1000,moremsg=''):
+		return self.mcontrol.create(self.mcontrol.const_warning,text,duration,moremsg if moremsg else '')
+	def showError(self,text,duration=1000,moremsg=''):
+		return self.mcontrol.create(self.mcontrol.const_error,text,duration,moremsg if moremsg else '')
+	def showCustom(self,itemcomponent,duration=1000):
+		return self.mcontrol.createCustom(itemcomponent,duration)
+	def clearAllInfo(self):
+		if self.mcontrol.screenLayout:
+			self.mcontrol.screenLayout.destroy()
+			self.mcontrol.screenLayout=None
 class LingmoLoadingButton(LingmoButton):
 	def __init__(self,parent=None,show=True,loading=False):
 		super().__init__(parent,show,autoResize=False)
@@ -819,9 +1028,6 @@ class LingmoMenu(LingmoFrame):
 		self.position=val
 	def count(self):
 		return len(self.items)
-class LingmoObject(QObject):
-	def __init__(self,parent=None,show=True):
-		super().__init__(parent,show)
 class LingmoProgressButton(LingmoButton):
 	def __init__(self,parent=None,show=True,content='',progress=0):
 		super().__init__(parent,show)

@@ -61,6 +61,7 @@ class ExampleApp():
         self.loadingButton.setContent('LoadingButton')
         self.loadingButton.move(0,a)
         self.button.pressed.connect(lambda:self.loadingButton.setLoading(False))
+        self.button.pressed.connect(lambda:print(1))
         a+=40
 
         self.menu=LingmoPyUI.LingmoMenu()
@@ -87,6 +88,9 @@ class ExampleApp():
             self.dropDownBox.addItem(item)
         a+=40
         print(LingmoPyUI.widgetCount)
+
+        self.infoBar=LingmoPyUI.LingmoInfoBar(self.window)
+        self.loadingButton.pressed.connect(lambda:self.infoBar.showInfo('This is all the widgets',1500))
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
