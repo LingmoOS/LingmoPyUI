@@ -43,7 +43,7 @@ class LingmoFrame(QFrame):
 	rightPressed=Signal()
 	rightReleased=Signal()
 	needUpdate=Signal()
-	def __init__(self,parent=None,show=True):
+	def __init__(self,parent=None,show=True,focusable=False):
 		global widgetCount
 		super().__init__(parent)
 		self.timer=QTimer()
@@ -56,6 +56,7 @@ class LingmoFrame(QFrame):
 		widgetCount+=1
 		self.setObjectName('LingmoWidget'+str(widgetCount))
 		self.ispressed=False
+		self.focusable=focusable
 	def __update__(self):
 		self.update()
 		styleSheetString='QFrame#'+self.objectName()+'{'
@@ -75,6 +76,8 @@ class LingmoFrame(QFrame):
 		return self.underMouse()
 	def mousePressEvent(self, event):
 		if self.isEnabled():
+			if self.focusable:
+				self.setFocus()
 			if event.button()==Qt.MouseButton.LeftButton:
 				self.pressed.emit()
 			if event.button()==Qt.MouseButton.RightButton:
@@ -959,7 +962,7 @@ class LingmoMenu(LingmoFrame):
 	def __init__(self,position=None,animationEnabled=True,autoResize=True):
 		super().__init__(show=False)
 		self.animationEnabled=animationEnabled
-		self.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.Tool)
+		self.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.Tool|Qt.WindowType.WindowStaysOnTopHint)
 		self.scrolled=False
 		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 		self.opacity=0
@@ -1031,6 +1034,9 @@ class LingmoMenu(LingmoFrame):
 		item.setParent(self.background)
 	def setPosition(self,val):
 		self.position=val
+	def focusOutEvent(self, event):
+		self.hideMenu()
+		return super().focusOutEvent(event)
 	def count(self):
 		return len(self.items)
 class LingmoProgressButton(LingmoButton):
@@ -1376,6 +1382,8 @@ class LingmoSlider(LingmoFrame):
 		self.sliding=False
 		self.slidePos=QPoint()
 		self.handleFirstPos=QPoint()
+		self.icon.pressed.connect(self.handle.pressed.emit)
+		self.icon.released.connect(self.handle.released.emit)
 	def updateEvent(self):
 		try:
 			self.handle.resize(20,20)

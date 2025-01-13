@@ -3,7 +3,7 @@ import LingmoPyUI
 class ExampleApp():
     def __init__(self):
         self.window = LingmoPyUI.LingmoFrame()
-        self.frame = LingmoPyUI.LingmoFrame(self.window)
+        self.frame = LingmoPyUI.LingmoFrame(self.window,focusable=True)
         self.setup_ui()
 
     def setup_ui(self):
@@ -61,7 +61,6 @@ class ExampleApp():
         self.loadingButton.setContent('LoadingButton')
         self.loadingButton.move(0,a)
         self.button.pressed.connect(lambda:self.loadingButton.setLoading(False))
-        self.button.pressed.connect(lambda:print(1))
         a+=40
 
         self.menu=LingmoPyUI.LingmoMenu()
