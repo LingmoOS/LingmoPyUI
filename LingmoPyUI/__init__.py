@@ -43,7 +43,7 @@ class LingmoFrame(QFrame):
 	rightPressed=Signal()
 	rightReleased=Signal()
 	needUpdate=Signal()
-	def __init__(self,parent=None,show=True,focusable=False):
+	def __init__(self,parent=None,show=True):
 		global widgetCount
 		super().__init__(parent)
 		self.timer=QTimer()
@@ -56,7 +56,6 @@ class LingmoFrame(QFrame):
 		widgetCount+=1
 		self.setObjectName('LingmoWidget'+str(widgetCount))
 		self.ispressed=False
-		self.focusable=focusable
 	def __update__(self):
 		self.update()
 		styleSheetString='QFrame#'+self.objectName()+'{'
@@ -76,8 +75,7 @@ class LingmoFrame(QFrame):
 		return self.underMouse()
 	def mousePressEvent(self, event):
 		if self.isEnabled():
-			if self.focusable:
-				self.setFocus()
+			self.setFocus()
 			if event.button()==Qt.MouseButton.LeftButton:
 				self.pressed.emit()
 			if event.button()==Qt.MouseButton.RightButton:
@@ -440,6 +438,7 @@ class LingmoFilledButton(LingmoFrame):
 		self.contentText=LingmoText(self)
 		self.contentText.setAlignment(Qt.AlignmentFlag.AlignCenter)
 		self.contentText.setFont(self.font())
+		self.contentText.pressed.connect(self.pressed.emit)
 	def updateEvent(self):
 		try:
 			if self.isEnabled():
@@ -549,6 +548,7 @@ class LingmoIconButton(LingmoFrame):
 		self.horizontalPadding=8
 		self.verticalPadding=8
 		self.icon.pressed.connect(self.pressed.emit)
+		self.text.pressed.connect(self.pressed.emit)
 	def updateEvent(self):
 		try:
 			self.tooltip.setDisabled(self.content==''or self.display!=self.IconOnly)
@@ -637,6 +637,7 @@ class LingmoInfoBar(QObject):
 				self.spacing=20
 				self.posy=0
 				self.maxWidth=maxWidth
+				self.deleted=False
 				super().__init__(parent=root)
 				self.addStyleSheet('background-color','transparent')
 				self.posYAnimation=LingmoAnimation(self,'posy')
@@ -650,10 +651,13 @@ class LingmoInfoBar(QObject):
 					self.resize(self.parentWidget().width(),self.spacing)
 				self.move(self.x(),self.posy)
 				for i in range(len(self.children())):
-					self.children()[i].move(20,i*(self.children()[i].height()+20))
+					self.children()[i].move(self.children()[i].x(),(self.children()[i-1].y()+self.children()[i-1].height() if i>0 else 0))
 			def childEvent(self, event):
+				self.updateEvent()
 				if len(self.children())==0:
 					self.destroy()
+					self.deleteLater()
+					self.deleted=True
 			def setPos(self,x,y):
 				self.move(x,self.posy)
 				self.posYAnimation.setStartValue(self.posy)
@@ -689,7 +693,11 @@ class LingmoInfoBar(QObject):
 				self.delayTimer.stop()
 				self.delayTimer.start()
 			def updateEvent(self):
-				self.resize(self.parentWidget().size())
+				try:
+					self.resize(self.itemcomponent.width()+20,self.itemcomponent.height()+20)
+				except:
+					pass
+				return super().updateEvent()
 		class LingmoStyle(LingmoFrame):
 			def __init__(self,parent=None):
 				if not isinstance(parent,LingmoInfoBar.Mcontrol.ContentComponent):
@@ -710,7 +718,7 @@ class LingmoInfoBar(QObject):
 					self.iconSource=LingmoIconDef.InfoSolid
 				super().__init__(parent=parent)
 				self.shadow=LingmoShadow(self,radius=4)
-				self.icon=LingmoIcon(self.iconSource,parent=self,iconSize=20)
+				self.icon=LingmoIcon(self.iconSource,parent=self,iconSize=20,autoAdjust=True)
 				self.btnClose=LingmoIconButton(LingmoIconDef.ChromeClose,parent=self,iconSize=10)
 				self.text=LingmoText(self,text=parent.text)
 				self.moreMsg=LingmoText(self,text=parent.moremsg)
@@ -725,6 +733,8 @@ class LingmoInfoBar(QObject):
 				self.btnClose.setPaddings(0,0)
 				self.btnClose.setIconColor(QColor(222,222,222,255)if LingmoTheme.instance.dark()else QColor(97,97,97,255))
 				self.btnClose.setVisible(parent.duration<=0)
+				self.text.setAlignment(Qt.AlignmentFlag.AlignLeft)
+				self.moreMsg.setAlignment(Qt.AlignmentFlag.AlignLeft)
 			def updateEvent(self):
 				try:
 					if LingmoTheme.instance.dark():
@@ -762,13 +772,13 @@ class LingmoInfoBar(QObject):
 							self.borderColor=QColor(255,255,255,255)
 					else:
 						if self.parentWidget().type==LingmoInfoBar.Mcontrol.const_success:
-							self.borderColor=QColor(210,61,27,255)
+							self.borderColor=QColor(210,232,208,255)
 						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_warning:
-							self.borderColor=QColor(240,53,25,255)
+							self.borderColor=QColor(240,230,194,255)
 						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_info:
-							self.borderColor=QColor(230,39,39,255)
+							self.borderColor=QColor(230,230,230,255)
 						elif self.parentWidget().type==LingmoInfoBar.Mcontrol.const_error:
-							self.borderColor=QColor(238,39,38,255)
+							self.borderColor=QColor(238,217,219,255)
 						else:
 							self.borderColor=QColor(255,255,255,255)
 					if LingmoTheme.instance.dark():
@@ -799,10 +809,11 @@ class LingmoInfoBar(QObject):
 					self.addStyleSheet('border-style','solid')
 					self.addStyleSheet('border-radius',4)
 					self.icon.setIconColor(self.iconColor)
-					self.icon.move((self.width()-(self.moreMsg.x()+self.moreMsg.width()-self.icon.x()))/2,10)
-					self.text.move(self.icon.x()+self.icon.width()+10,self.icon.y())
-					self.moreMsg.move(self.icon.x()+self.icon.width(),self.text.y()+self.text.height()+5)
-					self.resize(self.text.x()+self.text.width()+30 if self.btnClose.isVisible()else 48,max(self.icon.y()+self.icon.height(),self.moreMsg.y()+self.moreMsg.height())+10)
+					self.icon.move(20,10)
+					self.text.move(self.icon.x()+self.icon.width()+10,10)
+					self.moreMsg.move(self.text.x(),self.text.y()+self.text.height()+5)
+					self.resize(self.text.x()+self.text.width()+(30 if self.btnClose.isVisible()else 48),max(self.icon.y()+self.icon.height(),self.moreMsg.y()+self.moreMsg.height())+10)
+					self.move(self.parentWidget().width()/2-self.width()/2,self.parentWidget().height()/2-self.height()/2)
 				except:
 					pass
 		def __init__(self,root):
@@ -811,23 +822,27 @@ class LingmoInfoBar(QObject):
 			self.maxwidth=300
 			self.screenLayout: LingmoInfoBar.Mcontrol.ScreenlayoutComponent =None
 		def create(self,type,text,duration,moremsg):
-			if self.screenLayout:
-				last=self.screenLayout.getLastLoader()
-				if last.type==type and last.text==text and last.moremsg==moremsg:
-					last.duration=duration
-					if duration>0:
-						last.restart()
-					return last
+			try:
+				if self.screenLayout:
+					last=self.screenLayout.getLastLoader()
+					if last.type==type and last.text==text and last.moremsg==moremsg:
+						last.duration=duration
+						if duration>0:
+							last.restart()
+						return last
+			except:
+				pass
 			self.initScreenLayout()
 			return self.ContentComponent(self.screenLayout,type=type,text=text,duration=duration,moremsg=moremsg)
+			
 		def createCustom(self,itemcomponent,duration):
 			self.initScreenLayout()
 			if itemcomponent:
 				return self.ContentComponent(self.screenLayout,duration=duration,itemcomponent=itemcomponent)
 		def initScreenLayout(self):
-			if self.screenLayout==None:
+			if self.screenLayout==None or self.screenLayout.deleted:
 				self.screenLayout=self.ScreenlayoutComponent(self.root,maxWidth=self.maxwidth)
-				self.screenLayout.move(self.screenLayout.x(),75)
+				self.screenLayout.setPos(self.screenLayout.x(),75)
 	def __init__(self,root):
 		super().__init__()
 		self.root=root
@@ -1439,7 +1454,7 @@ class LingmoText(LingmoLabel):
 		self.renderType=Qt.TextFormat.PlainText if LingmoTheme.instance._nativeText else Qt.TextFormat.AutoText
 		self.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
 		self.setFont(LingmoTextStyle.body)
-		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+		self.setText(text)
 	def updateEvent(self):
 		self.addStyleSheet('color',QColor(self.color if self.colorEnabled else (qRgba(131,131,131,255)if LingmoTheme.instance.dark()else qRgba(160,160,160,255))))
 		self.setTextFormat(self.renderType)

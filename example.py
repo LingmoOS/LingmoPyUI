@@ -3,7 +3,7 @@ import LingmoPyUI
 class ExampleApp():
     def __init__(self):
         self.window = LingmoPyUI.LingmoFrame()
-        self.frame = LingmoPyUI.LingmoFrame(self.window,focusable=True)
+        self.frame = LingmoPyUI.LingmoFrame(self.window)
         self.setup_ui()
 
     def setup_ui(self):
@@ -86,19 +86,23 @@ class ExampleApp():
             item=LingmoPyUI.LingmoMenuItem(content='Item'+str(i))
             self.dropDownBox.addItem(item)
         a+=40
-        print(LingmoPyUI.widgetCount)
 
         self.infoBar=LingmoPyUI.LingmoInfoBar(self.window)
-        self.loadingButton.pressed.connect(lambda:self.infoBar.showSuccess('This is all the widgets',1500,'OK'))
-        self.loadingButton.pressed.connect(lambda:self.infoBar.showWarning('This is all the widgets',1500,'OK'))
-        self.loadingButton.pressed.connect(lambda:self.infoBar.showInfo('This is all the widgets',1500,'OK'))
-        self.loadingButton.pressed.connect(lambda:self.infoBar.showError('This is all the widgets',1500,'OK'))
+        self.progressButton.pressed.connect(lambda:self.infoBar.showSuccess('This is all the widgets',1500,'OK'))
+        self.filledButton.pressed.connect(lambda:self.infoBar.showWarning('This is all the widgets',1500,'OK'))
+        self.loadingButton.pressed.connect(self.showInfos)
+        self.iconButton.pressed.connect(lambda:self.infoBar.showError('This is all the widgets',1500,'OK'))
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
 
     def progress(self):
         self.progressButton.setProgress(1)
+    
+    def showInfos(self):
+        self.infoBar.showInfo('111',1500,'222')
+        self.infoBar.showInfo('222',2000,'333')
+        self.infoBar.showInfo('333',2500,'444')
 
 if __name__ == "__main__":
     app = ExampleApp()
