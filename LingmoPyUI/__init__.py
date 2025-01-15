@@ -41,6 +41,7 @@ class LingmoFrame(QFrame):
 	rightPressed=Signal()
 	rightReleased=Signal()
 	needUpdate=Signal()
+	moved=Signal()
 	def __init__(self,parent=None,show=True):
 		global widgetCount
 		super().__init__(parent)
@@ -48,12 +49,21 @@ class LingmoFrame(QFrame):
 		self.needUpdate.connect(self.updateEvent)
 		self.timer.timeout.connect(self.__update__)
 		self.timer.start(timerDelay)
+		self.setMouseTracking(True)
 		if show:
 			self.show()
 		self.styleSheets={}
 		widgetCount+=1
 		self.setObjectName('LingmoWidget'+str(widgetCount))
 		self.ispressed=False
+		if parent:
+			self.pressed.connect(self.parent().pressed.emit)
+			self.released.connect(self.parent().released.emit)
+			self.hovered.connect(self.parent().hovered.emit)
+			self.left.connect(self.parent().left.emit)
+			self.rightPressed.connect(self.parent().rightPressed.emit)
+			self.rightReleased.connect(self.parent().rightReleased.emit)
+			self.moved.connect(self.parent().moved.emit)
 	def __update__(self):
 		self.update()
 		styleSheetString='QFrame#'+self.objectName()+'{'
@@ -88,6 +98,9 @@ class LingmoFrame(QFrame):
 				self.rightReleased.emit()
 			self.ispressed=False
 		self.needUpdate.emit()
+	def mouseMoveEvent(self, event):
+		self.moved.emit()
+		self.needUpdate.emit()
 	def enterEvent(self, event):
 		if self.isEnabled():
 			self.hovered.emit()
@@ -110,6 +123,7 @@ class LingmoLabel(QLabel):
 	rightPressed=Signal()
 	rightReleased=Signal()
 	needUpdate=Signal()
+	moved=Signal()
 	def __init__(self,parent=None,show=True,autoAdjust=True):
 		global widgetCount
 		super().__init__(parent)
@@ -124,6 +138,14 @@ class LingmoLabel(QLabel):
 		widgetCount+=1
 		self.setObjectName('LingmoWidget'+str(widgetCount))
 		self.autoAdjust=autoAdjust
+		if parent:
+			self.pressed.connect(self.parent().pressed.emit)
+			self.released.connect(self.parent().released.emit)
+			self.hovered.connect(self.parent().hovered.emit)
+			self.left.connect(self.parent().left.emit)
+			self.rightPressed.connect(self.parent().rightPressed.emit)
+			self.rightReleased.connect(self.parent().rightReleased.emit)
+			self.moved.connect(self.parent().moved.emit)
 	def __update__(self):
 		self.update()
 		styleSheetString='QLabel#'+self.objectName()+'{'
@@ -160,6 +182,9 @@ class LingmoLabel(QLabel):
 			if event.button()==Qt.MouseButton.RightButton:
 				self.rightReleased.emit()
 			self.ispressed=False
+		self.needUpdate.emit()
+	def mouseMoveEvent(self, event):
+		self.moved.emit()
 		self.needUpdate.emit()
 	def enterEvent(self, event):
 		if self.isEnabled():
@@ -219,9 +244,10 @@ class LingmoAcrylic(LingmoFrame):
 	def setTargetRect(self,val):
 		self.targetRect=val
 class LingmoAppBar(LingmoFrame):
-	def __init__(self,parent=None,show=True,title=''):
+	def __init__(self,parent=None,show=True,title='',icon=''):
 		super().__init__(parent,show)
 		self.title=title
+		self.icon=icon
 		self.darkText=self.tr('Dark')
 		self.lightText=self.tr('Light')
 		self.minimizeText=self.tr('Minimize')
@@ -237,7 +263,7 @@ class LingmoAppBar(LingmoFrame):
 		self.closeNormalColor=QColor(0,0,0,0)
 		self.closeHoverColor=QColor(251,115,115,255)
 		self.closePressColor=QColor(251,115,115,255*0.8)
-		self.showDark=False
+		self.showDark=True
 		self.showClose=True
 		self.showMinimize=True
 		self.showMaximize=True
@@ -247,16 +273,16 @@ class LingmoAppBar(LingmoFrame):
 		self.iconSize=20
 		self.isMac=LingmoTools.isMacos()
 		self.borderlessColor=LingmoTheme.instance.primaryColor
-		self.btnDark=LingmoIconButton(LingmoIconDef.Brightness if LingmoTheme.instance.dark()else LingmoIconDef.QuietHours,iconSize=15,content=self.lightText if LingmoTheme.instance.dark() else self.darkText)
-		self.btnStayTop=LingmoIconButton(LingmoIconDef.Pinned,iconSize=14,content=self.stayTopCancelText if self.stayTop() else self.stayTopText)
+		self.btnDark=LingmoIconButton(LingmoIconDef.Brightness if LingmoTheme.instance.dark()else LingmoIconDef.QuietHours,parent=self,iconSize=15,content=self.lightText if LingmoTheme.instance.dark() else self.darkText)
+		self.btnStayTop=LingmoIconButton(LingmoIconDef.Pinned,parent=self,iconSize=14,content=self.stayTopCancelText if self.stayTop() else self.stayTopText)
 		if LingmoTools.isMacos():
 			self.btnClose=LingmoImageButton('./Image/btn_close_normal.png',parent=self,hoveredImage='./Image/btn_close_hovered.png',pushedImage='./Image/btn_close_pushed.png')
 			self.btnMinimize=LingmoImageButton('./Image/btn_min_normal.png',parent=self,hoveredImage='./Image/btn_min_hovered.png',pushedImage='./Image/btn_min_pushed.png')
 			self.btnMaximize=LingmoImageButton('./Image/btn_max_normal.png',parent=self,hoveredImage='./Image/btn_max_hovered.png',pushedImage='./Image/btn_max_pushed.png')
 		else:
-			self.btnMinimize=LingmoIconButton(LingmoIconDef.ChromeMinimize,parent=self,iconSize=11,content=self.minimizeText)
-			self.btnMaximize=LingmoIconButton(LingmoIconDef.ChromeMaximize,parent=self,iconSize=11,content=self.maximizeText)
-			self.btnClose=LingmoIconButton(LingmoIconDef.ChromeClose,parent=self,iconSize=10,content=self.closeText)
+			self.btnMinimize=LingmoIconButton(LingmoIconDef.ChromeMinimize,parent=self,iconSize=11,content=self.minimizeText,normalColor=self.minimizeNormalColor,hoverColor=self.minimizeHoverColor,pressedColor=self.minimizePressColor)
+			self.btnMaximize=LingmoIconButton(LingmoIconDef.ChromeMaximize,parent=self,iconSize=11,content=self.maximizeText,normalColor=self.maximizeNormalColor,hoverColor=self.maximizeHoverColor,pressedColor=self.maximizePressColor)
+			self.btnClose=LingmoIconButton(LingmoIconDef.ChromeClose,parent=self,iconSize=10,content=self.closeText,normalColor=self.closeNormalColor,hoverColor=self.closeHoverColor,pressedColor=self.closePressColor)
 		self.setVisibleDark(self.showDark)
 		self.setVisibleStayTop(self.showStayTop and isinstance(self.window(),LingmoWindow))
 		if LingmoTools.isMacos():
@@ -272,11 +298,11 @@ class LingmoAppBar(LingmoFrame):
 		self.btnMinimize.pressed.connect(self.minClickListener)
 		self.btnMaximize.pressed.connect(self.maxClickListener)
 		self.btnClose.pressed.connect(self.closeClickListener)
-		self.btnDark.resize(40,30)
-		self.btnStayTop.resize(40,30)
-		self.btnMinimize.resize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
-		self.btnMaximize.resize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
-		self.btnClose.resize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
+		self.btnDark.setIconBorderSize(40,30)
+		self.btnStayTop.setIconBorderSize(40,30)
+		self.btnMinimize.setIconBorderSize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
+		self.btnMaximize.setIconBorderSize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
+		self.btnClose.setIconBorderSize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
 		self.btnDark.setIconColor(self.textColor)
 		self.btnStayTop.setIconColor(LingmoTheme.instance.primaryColor if self.stayTop() else self.textColor)
 		self.btnMinimize.setIconColor(self.textColor)
@@ -291,8 +317,8 @@ class LingmoAppBar(LingmoFrame):
 	def updateEvent(self):
 		try:
 			self.raise_()
-			self.addStyleSheet('background-color',QColor(0,0,0,0))
-			self.resize(self.width(),30 if self.isVisible()else 0)
+			self.addStyleSheet('background-color','transparent')
+			self.resize(self.parent().width(),30 if self.isVisible()else 0)
 			lastButtonX=self.width()
 			if LingmoTools.isMacos():
 				if self.btnMaximize.isVisible():
@@ -332,6 +358,8 @@ class LingmoAppBar(LingmoFrame):
 				self.window().showNormal()
 			else:
 				self.window().showMaximized() 
+			self.btnMaximize.setIconSource(LingmoIconDef.ChromeRestore if self.isRestore() else LingmoIconDef.ChromeMaximize)
+			self.btnMaximize.setContent(self.restoreText if self.isRestore() else self.maximizeText)
 	def minClickListener(self):
 		self.window().showMinimized()
 	def closeClickListener(self):
@@ -340,6 +368,7 @@ class LingmoAppBar(LingmoFrame):
 		if isinstance(self.window(),LingmoWindow):
 			self.window().setStayTop(not self.stayTop())
 			self.btnStayTop.setIconColor(LingmoTheme.instance.primaryColor if self.stayTop() else self.textColor)		
+			self.btnStayTop.setContent(self.stayTopCancelText if self.stayTop() else self.stayTopText)
 	def darkClickListener(self):
 		if LingmoTheme.instance.dark():
 			LingmoTheme.instance.darkMode=LingmoDefines.DarkMode.Light
@@ -738,6 +767,11 @@ class LingmoIconButton(LingmoFrame):
 		self.verticalPadding=vert
 	def setIconSource(self,val):
 		self.icon.setIconSource(val)
+	def setContent(self,val):
+		self.content=val
+	def closeEvent(self, event):
+		self.tooltip.close()
+		return super().closeEvent(event)
 class LingmoImageButton(LingmoFrame):
 	def __init__(self,normalImage: str,parent=None,show=True,hoveredImage: str|None = None,pushedImage: str|None = None):
 		super().__init__(parent,show)
@@ -1696,15 +1730,39 @@ class LingmoToolTip(LingmoFrame):
 	def setContent(self,val):
 		self.content=val
 class LingmoWindow(LingmoFrame):
-	def __init__(self,parent=None,show=True,stayTop=False):
-		super().__init__(parent,show)
-		self.frameless=LingmoFrameless(self)
+	def __init__(self,parent=None,show=True,title='Lingmo Window',windowIcon=LingmoApp.windowIcon,launchMode=LingmoDefines.LaunchMode.Stantard,
+			argument=({}),fixSize=False,fitsAppBarWindows=False,tintOpacity=0.80 if LingmoTheme.instance.dark() else 0.75,blurRadius=60,
+			stayTop=False,showDark=False,showClose=True,showMinimize=True,showMaximize=True,showStayTop=False,
+			autoMaximize=True,autoCenter=True,autoDestroy=True,useSystemAppBar=LingmoApp.userSystemAppBar,__margins=0):
+		super().__init__(parent,show=False)
+		self.launchMode=launchMode
+		self.argument=argument
+		self.fixSize=fixSize
+		self.fitsAppBarWindows=fitsAppBarWindows
+		self.tintOpacity=tintOpacity
+		self.blurRadius=blurRadius
+		self.setWindowTitle(title)
+		self.setMouseTracking(True)
+		self.setWindowIcon(QIcon(windowIcon))
+		if self.windowHandle():
+			self.windowHandle().setFlags(Qt.WindowType.WindowOverridesSystemGestures)
 		self.stayTop=stayTop
+		self.appbar=LingmoAppBar(self,title=self.windowTitle(),icon=self.windowIcon())
+		self.contentItem=LingmoFrame(self)
+		self.frameless=LingmoFrameless(self,self.appbar,self.appbar.btnMaximize,self.appbar.btnMinimize,self.appbar.btnClose,show)
+		self.moved.connect(self.frameless.onMouseMove)
+		self.pressed.connect(self.frameless.onMousePress)
+		self.released.connect(self.frameless.onMouseRelease)
+		self.setStayTop(stayTop)
+		self.show()
+		self.appbar.addStyleSheet('background-color','transparent')
+		self.contentItem.addStyleSheet('border-radius','4px 4px 4px 4px')
+		self.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius)
 	def updateEvent(self):
 		try:
-			pass
+			self.contentItem.setGeometry(0,self.appbar.height(),self.width(),self.height()-self.appbar.height())
 		except:
 			pass
 	def setStayTop(self,val):
 		self.stayTop=val
-		self.frameless.setWindowTopMost(self.stayTop)
+		self.frameless.setWindowTopMost(val)

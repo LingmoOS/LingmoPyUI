@@ -2,14 +2,14 @@ import LingmoPyUI
 
 class ExampleApp():
     def __init__(self):
-        self.window = LingmoPyUI.LingmoFrame()
-        self.frame = LingmoPyUI.LingmoFrame(self.window)
+        self.window = LingmoPyUI.LingmoWindow()
+        self.frame = LingmoPyUI.LingmoFrame(self.window.contentItem)
         self.setup_ui()
 
     def setup_ui(self):
         self.frame.resize(500, 1000)
         self.frame.setWindowTitle('Example')
-        self.frame.addStyleSheet("background-color", "green")
+        #self.frame.addStyleSheet("background-color", "green")
 
         self.window.resize(500, 500)
 
@@ -33,9 +33,8 @@ class ExampleApp():
         self.iconButton.setIconBorderSize(40,30)
         self.iconButton.move(0,a)
         a += 40
-        self.iconButton.timer.timeout.connect(lambda:print(self.iconButton.background.size()))
 
-        self.scrollbar = LingmoPyUI.LingmoScrollBar(self.window, target=self.frame)
+        self.scrollbar = LingmoPyUI.LingmoScrollBar(self.window.contentItem, target=self.frame)
         self.scrollbar.setOrientation(LingmoPyUI.Qt.Orientation.Vertical)
 
         self.tooltip = LingmoPyUI.LingmoToolTip(self.button, content="ToolTip")
