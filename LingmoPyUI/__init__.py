@@ -227,6 +227,7 @@ class LingmoAppBar(LingmoFrame):
 		self.minimizeText=self.tr('Minimize')
 		self.restoreText=self.tr('Restore')
 		self.maximizeText=self.tr('Maximize')
+		self.closeText=self.tr('Close')
 		self.stayTopText=self.tr('Sticky on Top')
 		self.stayTopCancelText=self.tr('Cancel Sticky on Top')
 		self.textColor=LingmoTheme.instance.fontPrimaryColor
@@ -246,11 +247,143 @@ class LingmoAppBar(LingmoFrame):
 		self.iconSize=20
 		self.isMac=LingmoTools.isMacos()
 		self.borderlessColor=LingmoTheme.instance.primaryColor
+		self.btnDark=LingmoIconButton(LingmoIconDef.Brightness if LingmoTheme.instance.dark()else LingmoIconDef.QuietHours,iconSize=15,content=self.lightText if LingmoTheme.instance.dark() else self.darkText)
+		self.btnStayTop=LingmoIconButton(LingmoIconDef.Pinned,iconSize=14,content=self.stayTopCancelText if self.stayTop() else self.stayTopText)
+		if LingmoTools.isMacos():
+			self.btnClose=LingmoImageButton('./Image/btn_close_normal.png',parent=self,hoveredImage='./Image/btn_close_hovered.png',pushedImage='./Image/btn_close_pushed.png')
+			self.btnMinimize=LingmoImageButton('./Image/btn_min_normal.png',parent=self,hoveredImage='./Image/btn_min_hovered.png',pushedImage='./Image/btn_min_pushed.png')
+			self.btnMaximize=LingmoImageButton('./Image/btn_max_normal.png',parent=self,hoveredImage='./Image/btn_max_hovered.png',pushedImage='./Image/btn_max_pushed.png')
+		else:
+			self.btnMinimize=LingmoIconButton(LingmoIconDef.ChromeMinimize,parent=self,iconSize=11,content=self.minimizeText)
+			self.btnMaximize=LingmoIconButton(LingmoIconDef.ChromeMaximize,parent=self,iconSize=11,content=self.maximizeText)
+			self.btnClose=LingmoIconButton(LingmoIconDef.ChromeClose,parent=self,iconSize=10,content=self.closeText)
+		self.setVisibleDark(self.showDark)
+		self.setVisibleStayTop(self.showStayTop and isinstance(self.window(),LingmoWindow))
+		if LingmoTools.isMacos():
+			self.setVisibleClose(self.showClose)
+			self.setVisibleMinimize(self.showMinimize)
+			self.setVisibleMaximize(self.showMaximize and self.resizable())
+		else:
+			self.setVisibleMinimize(self.showMinimize)
+			self.setVisibleMaximize(self.showMaximize and self.resizable())
+			self.setVisibleClose(self.showClose)
+		self.btnDark.pressed.connect(self.darkClickListener)
+		self.btnStayTop.pressed.connect(self.stayTopClickListener)
+		self.btnMinimize.pressed.connect(self.minClickListener)
+		self.btnMaximize.pressed.connect(self.maxClickListener)
+		self.btnClose.pressed.connect(self.closeClickListener)
+		self.btnDark.resize(40,30)
+		self.btnStayTop.resize(40,30)
+		self.btnMinimize.resize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
+		self.btnMaximize.resize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
+		self.btnClose.resize(12 if LingmoTools.isMacos() else 40,12 if LingmoTools.isMacos() else 30)
+		self.btnDark.setIconColor(self.textColor)
+		self.btnStayTop.setIconColor(LingmoTheme.instance.primaryColor if self.stayTop() else self.textColor)
+		self.btnMinimize.setIconColor(self.textColor)
+		self.btnMaximize.setIconColor(self.textColor)
+		self.btnClose.setIconColor(self.textColor)
+		self.btnDark.setPaddings(0,0)
+		self.btnStayTop.setPaddings(0,0)
+		if not LingmoTools.isMacos():
+			self.btnMinimize.setPaddings(0,0)
+			self.btnMaximize.setPaddings(0,0)
+			self.btnClose.setPaddings(0,0)
 	def updateEvent(self):
 		try:
 			self.raise_()
+			self.addStyleSheet('background-color',QColor(0,0,0,0))
+			self.resize(self.width(),30 if self.isVisible()else 0)
+			lastButtonX=self.width()
+			if LingmoTools.isMacos():
+				if self.btnMaximize.isVisible():
+					self.btnMaximize.move(lastButtonX-self.btnMaximize.width(),self.height()/2-self.btnMaximize.height()/2)
+				lastButtonX=self.btnMaximize.x() if self.btnMaximize.isVisible() else lastButtonX
+				if self.btnMinimize.isVisible():
+					self.btnMinimize.move(lastButtonX-self.btnMinimize.width(),self.height()/2-self.btnMinimize.height()/2)
+				lastButtonX=self.btnMinimize.x() if self.btnMinimize.isVisible() else lastButtonX
+				if self.btnClose.isVisible():
+					self.btnClose.move(lastButtonX-self.btnClose.width(),self.height()/2-self.btnClose.height()/2)
+				lastButtonX=self.btnClose.x() if self.btnClose.isVisible() else lastButtonX
+			else:
+				if self.btnClose.isVisible():
+					self.btnClose.move(lastButtonX-self.btnClose.width(),self.height()/2-self.btnClose.height()/2)
+				lastButtonX=self.btnClose.x() if self.btnClose.isVisible() else lastButtonX
+				if self.btnMaximize.isVisible():
+					self.btnMaximize.move(lastButtonX-self.btnMaximize.width(),self.height()/2-self.btnMaximize.height()/2)
+				lastButtonX=self.btnMaximize.x() if self.btnMaximize.isVisible() else lastButtonX
+				if self.btnMinimize.isVisible():
+					self.btnMinimize.move(lastButtonX-self.btnMinimize.width(),self.height()/2-self.btnMinimize.height()/2)
+				lastButtonX=self.btnMinimize.x() if self.btnMinimize.isVisible() else lastButtonX
+			if self.btnStayTop.isVisible():
+				self.btnStayTop.move(lastButtonX-self.btnStayTop.width(),self.height()/2-self.btnStayTop.height()/2)
+			lastButtonX=self.btnStayTop.x() if self.btnStayTop.isVisible() else lastButtonX
+			if self.btnDark.isVisible():
+				self.btnDark.move(lastButtonX-self.btnDark.width(),self.height()/2-self.btnDark.height()/2)
 		except:
 			pass
+	def maxClickListener(self):
+		if LingmoTools.isMacos():
+			if self.window().isFullScreen() or self.window().isMaximized():
+				self.window().showNormal()
+			else:
+				self.window().showFullScreen()
+		else:
+			if self.window().isMaximized() or self.window().isFullScreen():
+				self.window().showNormal()
+			else:
+				self.window().showMaximized() 
+	def minClickListener(self):
+		self.window().showMinimized()
+	def closeClickListener(self):
+		self.window().close()
+	def stayTopClickListener(self):
+		if isinstance(self.window(),LingmoWindow):
+			self.window().setStayTop(not self.stayTop())
+			self.btnStayTop.setIconColor(LingmoTheme.instance.primaryColor if self.stayTop() else self.textColor)		
+	def darkClickListener(self):
+		if LingmoTheme.instance.dark():
+			LingmoTheme.instance.darkMode=LingmoDefines.DarkMode.Light
+			self.btnDark.setIconSource(LingmoIconDef.QuietHours)
+		else:
+			LingmoTheme.instance.darkMode=LingmoDefines.DarkMode.Dark
+			self.btnDark.setIconSource(LingmoIconDef.Brightness)
+	def stayTop(self):
+		if isinstance(self.window(),LingmoWindow):
+			return self.window().stayTop
+		else:
+			return False
+	def isRestore(self):
+		return self.window() and (self.window().isMaximized() or self.window().isFullScreen())
+	def resizable(self):
+		return self.window() and not(self.window().width()==self.window().maximumWidth() and \
+									self.window().width()==self.window().minimumWidth() and \
+									self.window().height()==self.window().maximumHeight() and \
+									self.window().height()==self.window().minimumHeight())
+	def setVisibleDark(self,val):
+		self.btnDark.setVisible(val)
+	def setVisibleStayTop(self,val):
+		self.btnStayTop.setVisible(val)
+	def setVisibleMaximize(self,val):
+		self.btnMaximize.setVisible(val)
+	def setVisibleMinimize(self,val):
+		self.btnMinimize.setVisible(val)
+	def setVisibleClose(self,val):
+		self.btnClose.setVisible(val)
+	def setShowDark(self,val):
+		self.showDark=val
+		self.setVisibleDark(val)
+	def setShowStayTop(self,val):
+		self.showStayTop=val
+		self.setVisibleStayTop(val)
+	def setShowMaximize(self,val):
+		self.showMaximize=val
+		self.setVisibleMaximize(val)
+	def setShowMinimize(self,val):
+		self.showMinimize=val
+		self.setVisibleMinimize(val)
+	def setShowClose(self,val):
+		self.showClose=val
+		self.setVisibleClose(val)
 class LingmoButton(LingmoFrame):
 	def __init__(self,parent=None,show=True,content='',
 	normalColor=QColor(62,62,62,255)if LingmoTheme.instance.dark() else QColor(254,254,254,255),
@@ -572,7 +705,6 @@ class LingmoIconButton(LingmoFrame):
 			self.background.addStyleSheet('border-radius',self.radius)
 			self.background.addStyleSheet('background-color',self.color)
 			self.text.addStyleSheet('color',self.textColor)
-			self.background.adjustSize()
 			self.background.move(self.horizontalPadding,self.verticalPadding)
 			self.resize(self.background.width()+2*self.horizontalPadding,self.background.height()+2*self.verticalPadding)
 			self.focusRect.setVisible(self.hasFocus())
@@ -596,14 +728,16 @@ class LingmoIconButton(LingmoFrame):
 	def setIconSize(self,val):
 		self.iconSize=val
 	def setIconBorderWidth(self,val):
-		self.icon.resize(val,self.icon.height())
+		self.background.resize(val,self.icon.height())
 	def setIconBorderHeight(self,val):
-		self.icon.resize(self.icon.width(),val)
+		self.background.resize(self.icon.width(),val)
 	def setIconBorderSize(self,width,height):
-		self.icon.resize(width,height)
+		self.background.resize(width,height)
 	def setPaddings(self,hori,vert):
 		self.horizontalPadding=hori
 		self.verticalPadding=vert
+	def setIconSource(self,val):
+		self.icon.setIconSource(val)
 class LingmoImageButton(LingmoFrame):
 	def __init__(self,normalImage: str,parent=None,show=True,hoveredImage: str|None = None,pushedImage: str|None = None):
 		super().__init__(parent,show)
@@ -1562,10 +1696,15 @@ class LingmoToolTip(LingmoFrame):
 	def setContent(self,val):
 		self.content=val
 class LingmoWindow(LingmoFrame):
-	def __init__(self,parent=None,show=True):
+	def __init__(self,parent=None,show=True,stayTop=False):
 		super().__init__(parent,show)
+		self.frameless=LingmoFrameless(self)
+		self.stayTop=stayTop
 	def updateEvent(self):
 		try:
 			pass
 		except:
 			pass
+	def setStayTop(self,val):
+		self.stayTop=val
+		self.frameless.setWindowTopMost(self.stayTop)

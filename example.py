@@ -29,12 +29,11 @@ class ExampleApp():
         self.slider2.move(0, a)
         a += 200
 
-        self.iconButton = LingmoPyUI.LingmoIconButton(
-            LingmoPyUI.LingmoIconDef.Accept, self.frame, content="IconButton"
-        )
-        self.iconButton.setDisplay(LingmoPyUI.LingmoIconButton.TextBesideIcon)
+        self.iconButton = LingmoPyUI.LingmoIconButton(LingmoPyUI.LingmoIconDef.Accept, self.frame, content="IconButton")
+        self.iconButton.setIconBorderSize(40,30)
         self.iconButton.move(0,a)
         a += 40
+        self.iconButton.timer.timeout.connect(lambda:print(self.iconButton.background.size()))
 
         self.scrollbar = LingmoPyUI.LingmoScrollBar(self.window, target=self.frame)
         self.scrollbar.setOrientation(LingmoPyUI.Qt.Orientation.Vertical)
