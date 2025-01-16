@@ -9,7 +9,6 @@ class ExampleApp():
     def setup_ui(self):
         self.frame.resize(500, 1000)
         self.frame.setWindowTitle('Example')
-        #self.frame.addStyleSheet("background-color", "green")
 
         self.window.resize(500, 500)
 

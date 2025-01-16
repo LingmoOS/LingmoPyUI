@@ -1735,34 +1735,39 @@ class LingmoWindow(LingmoFrame):
 			stayTop=False,showDark=False,showClose=True,showMinimize=True,showMaximize=True,showStayTop=False,
 			autoMaximize=True,autoCenter=True,autoDestroy=True,useSystemAppBar=LingmoApp.userSystemAppBar,__margins=0):
 		super().__init__(parent,show=False)
+		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 		self.launchMode=launchMode
 		self.argument=argument
 		self.fixSize=fixSize
 		self.fitsAppBarWindows=fitsAppBarWindows
 		self.tintOpacity=tintOpacity
 		self.blurRadius=blurRadius
+		self.windowIconPath=windowIcon
 		self.setWindowTitle(title)
 		self.setMouseTracking(True)
-		self.setWindowIcon(QIcon(windowIcon))
-		if self.windowHandle():
-			self.windowHandle().setFlags(Qt.WindowType.WindowOverridesSystemGestures)
 		self.stayTop=stayTop
-		self.appbar=LingmoAppBar(self,title=self.windowTitle(),icon=self.windowIcon())
-		self.contentItem=LingmoFrame(self)
+		self.background=LingmoFrame(self)
+		self.appbar=LingmoAppBar(self.background,title=self.windowTitle(),icon=self.windowIcon())
+		self.contentItem=LingmoFrame(self.background)
 		self.frameless=LingmoFrameless(self,self.appbar,self.appbar.btnMaximize,self.appbar.btnMinimize,self.appbar.btnClose,show)
 		self.moved.connect(self.frameless.onMouseMove)
 		self.pressed.connect(self.frameless.onMousePress)
 		self.released.connect(self.frameless.onMouseRelease)
-		self.setStayTop(stayTop)
+		#self.setStayTop(stayTop)
 		self.show()
-		self.appbar.addStyleSheet('background-color','transparent')
 		self.contentItem.addStyleSheet('border-radius','4px 4px 4px 4px')
-		self.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius)
+		self.background.addStyleSheet('background-color',self.palette().color(QPalette.ColorRole.Window))
+		self.background.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius)
+		self.setWindowIcon(QPixmap(self.windowIconPath))
 	def updateEvent(self):
 		try:
+			self.background.resize(self.size())
 			self.contentItem.setGeometry(0,self.appbar.height(),self.width(),self.height()-self.appbar.height())
 		except:
 			pass
 	def setStayTop(self,val):
 		self.stayTop=val
 		self.frameless.setWindowTopMost(val)
+	def setWindowIconPath(self,val):
+		self.windowIconPath=val
+		self.setWindowIcon(QIcon(val))

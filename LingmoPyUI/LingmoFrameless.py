@@ -39,7 +39,7 @@ class LingmoFrameless(QObject):
 		self.current=self.parent().winId()
 		if LingmoTools.isLinux():
 			self.parent().setWindowFlags(Qt.WindowType.CustomizeWindowHint|Qt.WindowType.FramelessWindowHint)
-		self.parent().setWindowFlags(Qt.WindowType.FramelessWindowHint)
+		self.parent().setWindowFlag(Qt.WindowType.FramelessWindowHint,True)
 		self.parent().addStyleSheet('border-width',1)
 		self.parent().addStyleSheet('border-style','solid')
 		if self.maximizeButton:
@@ -81,9 +81,10 @@ class LingmoFrameless(QObject):
 	def setWindowTopMost(self,topmost):
 		if self.parent().windowHandle():
 			if topmost:
-				self.parent().windowHandle().setFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
+				self.parent().windowHandle().setFlag(Qt.WindowType.WindowStaysOnTopHint,True)
 			else:
-				self.parent().windowHandle().setFlags(Qt.WindowType.FramelessWindowHint)
+				self.parent().windowHandle().setFlag(Qt.WindowType.WindowStaysOnTopHint,False)
+			self.parent().windowHandle().setIcon(QPixmap(self.parent().windowIconPath))
 	def onMousePress(self):
 		if self.edges!=0:
 			self.updateCursor(self.edges)
