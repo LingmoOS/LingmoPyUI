@@ -2,12 +2,13 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 
-import sys
 import os
-
+import sys
 from . import LingmoIconDef
+
+packagePath = os.path.dirname(os.path.abspath(__file__))
 appid='com.lingmo.pyui.1.0'
-windowIcon='./LingmoPyUI/Image/icon.png'
+windowIcon=packagePath+'/Image/icon.png'
 locale=QLocale()
 launcher=QObject()
 useSystemAppBar=False

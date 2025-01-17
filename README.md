@@ -23,7 +23,7 @@ LingmoPyUI is the Python version of [LingmoUI](https://github.com/LingmoOS/Lingm
 
 * `__init__.py`: All the Widgets
 
-## Installing(Not Available)
+## Installing
 
 Run this in the Shell
 ```shell

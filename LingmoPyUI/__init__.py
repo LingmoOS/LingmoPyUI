@@ -219,12 +219,12 @@ class LingmoAcrylic(LingmoFrame):
 		self.blurEffect=QGraphicsBlurEffect(self.blurWidget)
 		self.blurWidget.setGeometry(self.targetRect)
 		self.luminosityWidget=LingmoFrame(self)
-		self.luminosityWidget.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
+		self.luminosityWidget.resize(self.size())
 		self.tintWidget=LingmoFrame(self)
-		self.tintWidget.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
+		self.tintWidget.resize(self.size())
 		self.imageWidget=LingmoLabel(self)
-		self.imageWidget.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
-		self.imageWidget.setPixmap(QPixmap('./Image/noise.png'))
+		self.imageWidget.resize(self.size())
+		self.imageWidget.setPixmap(QPixmap(LingmoApp.packagePath+'/Image/noise.png'))
 		self.imageWidget.addStyleSheet('background-repeat','repeat')
 	def updateEvent(self):
 		try:
@@ -282,9 +282,9 @@ class LingmoAppBar(LingmoFrame):
 		self.btnDark=LingmoIconButton(LingmoIconDef.Brightness if LingmoTheme.instance.dark()else LingmoIconDef.QuietHours,parent=self,iconSize=15,content=self.lightText if LingmoTheme.instance.dark() else self.darkText)
 		self.btnStayTop=LingmoIconButton(LingmoIconDef.Pinned,parent=self,iconSize=14,content=self.stayTopCancelText if self.stayTop() else self.stayTopText)
 		if LingmoTools.isMacos():
-			self.btnClose=LingmoImageButton('./Image/btn_close_normal.png',parent=self,hoveredImage='./Image/btn_close_hovered.png',pushedImage='./Image/btn_close_pushed.png')
-			self.btnMinimize=LingmoImageButton('./Image/btn_min_normal.png',parent=self,hoveredImage='./Image/btn_min_hovered.png',pushedImage='./Image/btn_min_pushed.png')
-			self.btnMaximize=LingmoImageButton('./Image/btn_max_normal.png',parent=self,hoveredImage='./Image/btn_max_hovered.png',pushedImage='./Image/btn_max_pushed.png')
+			self.btnClose=LingmoImageButton(LingmoApp.packagePath+'/Image/btn_close_normal.png',parent=self,hoveredImage=LingmoApp.packagePath+'/Image/btn_close_hovered.png',pushedImage=LingmoApp.packagePath+'/Image/btn_close_pushed.png')
+			self.btnMinimize=LingmoImageButton(LingmoApp.packagePath+'/Image/btn_min_normal.png',parent=self,hoveredImage=LingmoApp.packagePath+'/Image/btn_min_hovered.png',pushedImage=LingmoApp.packagePath+'/Image/btn_min_pushed.png')
+			self.btnMaximize=LingmoImageButton(LingmoApp.packagePath+'/Image/btn_max_normal.png',parent=self,hoveredImage=LingmoApp.packagePath+'/Image/btn_max_hovered.png',pushedImage=LingmoApp.packagePath+'/Image/btn_max_pushed.png')
 		else:
 			self.btnMinimize=LingmoIconButton(LingmoIconDef.ChromeMinimize,parent=self,iconSize=11,content=self.minimizeText,normalColor=self.minimizeNormalColor,hoverColor=self.minimizeHoverColor,pressedColor=self.minimizePressColor)
 			self.btnMaximize=LingmoIconButton(LingmoIconDef.ChromeMaximize,parent=self,iconSize=11,content=self.maximizeText,normalColor=self.maximizeNormalColor,hoverColor=self.maximizeHoverColor,pressedColor=self.maximizePressColor)
@@ -669,7 +669,7 @@ class LingmoIcon(LingmoLabel):
 	def updateEvent(self):
 		try:
 			self.fontDatabase=QFontDatabase()
-			self.fontDatabase.addApplicationFont('./LingmoPyUI/Font/FluentIcons.ttf')
+			self.fontDatabase.addApplicationFont(LingmoApp.packagePath+'/Font/FluentIcons.ttf')
 			self.fontFamily=QFont(self.fontDatabase.applicationFontFamilies(0)[-1])
 			self.fontFamily.setPixelSize(self.iconSize)
 			self.setFont(self.fontFamily)
@@ -1784,7 +1784,7 @@ class LingmoWindow(LingmoFrame):
 							useSystemEffect=not LingmoTheme.instance.blurBehindWindowEnabled)
 		self.imgBack=LingmoLabel(self.background,show=False)
 		self.ancrylic=LingmoAcrylic(self.background,target=self.imgBack,tintOpacity=self.tintOpacity,blurRadius=self.blurRadius,tintColor=QColor(0,0,0,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255),
-							targetRect=QRect(self.x()-self.screen().virtualGeometry().x(),self.y()-self.screen().virtualGeometry().y(),self.width(),self.height()))
+							targetRect=QRect(self.x()-self.screen().virtualGeometry().x(),self.y()-self.screen().virtualGeometry().y(),self.width(),self.height()),show=False)
 		self.contentItem=LingmoFrame(self.background)
 		LingmoTheme.instance.desktopImagePathChanged.connect(self.onDesktopImagePathChanged)
 		LingmoTheme.instance.blurBehindWindowEnabledChanged.connect(self.onBlurBehindWindowEnabledChanged)
@@ -1850,6 +1850,8 @@ class LingmoWindow(LingmoFrame):
 			self.loadWidget.setGeometry(self.geometry())
 			self.loadBackground.resize(self.loadWidget.size())
 			self.loadWidget.show()
+			self.ancrylic.resize(self.size())
+			self.ancrylic.addStyleSheet('border-radius',0 if self.isMaximized() or self.isFullScreen() else LingmoTheme.instance._roundWindowRadius)
 			if self.unloaded:
 				self.unloaded=False
 				self.setLoadWidgetOpacity(0)
@@ -1924,7 +1926,7 @@ class LingmoWindow(LingmoFrame):
 		self.loadWidgetOpacityAnimation.start()
 	def showLoading(self,text='',cancel=True):
 		if text=='':
-			text=self.tr('Loading')
+			text=self.tr('Loading...')
 		self.cancel=cancel
 		self.setLoadWidgetOpacity(1)
 	def hideLoading(self):
