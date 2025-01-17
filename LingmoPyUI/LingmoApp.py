@@ -6,6 +6,7 @@ import sys
 import os
 
 from . import LingmoIconDef
+appid='com.lingmo.pyui.1.0'
 windowIcon='./LingmoPyUI/Image/icon.png'
 locale=QLocale()
 launcher=QObject()

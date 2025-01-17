@@ -82,8 +82,8 @@ class ExampleApp():
 
         self.progressButton.pressed.connect(lambda:self.window.showSuccess('This is all the widgets',1500,'OK'))
         self.filledButton.pressed.connect(lambda:self.window.showWarning('This is all the widgets',1500,'OK'))
-        self.loadingButton.pressed.connect(self.showInfos)
-        self.iconButton.pressed.connect(lambda:self.window.showError('This is all the widgets',1500,'OK'))
+        self.loadingButton.pressed.connect(self.window.showLoading)
+        self.iconButton.pressed.connect(lambda:self.window.showInfo('This is all the widgets',1500,'OK'))
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
@@ -91,10 +91,6 @@ class ExampleApp():
     def progress(self):
         self.progressButton.setProgress(1)
     
-    def showInfos(self):
-        self.window.showInfo('111',1500,'222')
-        self.window.showInfo('222',2000,'333')
-        self.window.showInfo('333',2500,'444')
 
 if __name__ == "__main__":
     app = ExampleApp()

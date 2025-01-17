@@ -15,6 +15,11 @@ from . import LingmoUnits
 import math
 timerDelay=1
 widgetCount=0
+try:
+    from ctypes import windll  
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(LingmoApp.appid)
+except ImportError:
+    pass
 class LingmoAnimation(QVariantAnimation):
 	Variable=1
 	Callable=2
@@ -1755,10 +1760,12 @@ class LingmoWindow(LingmoFrame):
 		super().__init__(parent,show=False)
 		self.resize(width,height)
 		self.loadWidget=LingmoFrame(show=False)
-		self.loadWidget.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+		self.loadWidget.setWindowFlags(Qt.WindowType.FramelessWindowHint|Qt.WindowType.ToolTip)
 		self.loadWidget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 		self.loadBackground=LingmoFrame(self.loadWidget)
 		self.loadBackground.addStyleSheet('background-color','#44000000')
+		self.loadRing=LingmoProgressRing(self.loadBackground)
+		self.loadText=LingmoText(self.loadBackground,text=self.tr('Loading...'))
 		self.loadWidget.show()
 		self.isLazyInit=True
 		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -1809,12 +1816,15 @@ class LingmoWindow(LingmoFrame):
 		self.timerUpdateImage.timeout.connect(self.onTimerTimeout)
 		self.timerUpdateImage.start(150)
 		self.infoBar=LingmoInfoBar(self.contentItem)
-		self.loadWidgetOpacity=0
+		self.loadWidgetOpacity=1
 		self.loadWidgetOpacityAnimation=QSequentialAnimationGroup()
 		self.loadWidgetOpacityAnimation.addPause(83)
 		self.loadWidgetOpacityAnimation1=LingmoAnimation(self,'loadWidgetOpacity')
 		self.loadWidgetOpacityAnimation1.setDuration(167)
+		self.loadWidgetOpacityAnimation.addAnimation(self.loadWidgetOpacityAnimation1)
 		self.unloaded=True
+		self.cancel=False
+		self.loadBackground.pressed.connect(self.cancelLoading)
 	def updateEvent(self):
 		try:
 			self.resizeBorderColor=(QColor(51,51,51,255)if LingmoTheme.instance.dark() else QColor(110,110,110,255))if self.isActiveWindow() else (QColor(61,61,61,255)if LingmoTheme.instance.dark()else QColor(167,167,167,255))
@@ -1839,12 +1849,14 @@ class LingmoWindow(LingmoFrame):
 			self.imgBack.resize(LingmoTools.desktopAvailableGeometry(self).size())
 			self.loadWidget.setGeometry(self.geometry())
 			self.loadBackground.resize(self.loadWidget.size())
-			print(self.loadWidgetOpacity)
+			self.loadWidget.show()
 			if self.unloaded:
 				self.unloaded=False
-				self.setLoadWidgetOpacity(1)
+				self.setLoadWidgetOpacity(0)
 			self.loadWidget.setWindowOpacity(self.loadWidgetOpacity)
-		except:
+			self.loadRing.move(self.background.width()/2-self.loadRing.width()/2,self.height()/2-(self.loadRing.height()+8+self.loadText.height())/2)
+			self.loadText.move(self.background.width()/2-self.loadText.width()/2,self.loadRing.y()+self.loadRing.height()+8)
+		except :
 			pass
 	def setStayTop(self,val):
 		self.stayTop=val
@@ -1896,13 +1908,13 @@ class LingmoWindow(LingmoFrame):
 			self.imgBack.setPixmap(QPixmap(LingmoTheme.instance._desktopImagePath))
 		else:
 			self.imgBack.setPixmap(QPixmap())
-	def showSuccess(self,text,duration=2000,moremsg=''):
+	def showSuccess(self,text,duration=1000,moremsg=''):
 		return self.infoBar.showSuccess(text,duration,moremsg)
-	def showInfo(self,text,duration=2000,moremsg=''):
+	def showInfo(self,text,duration=1000,moremsg=''):
 		return self.infoBar.showInfo(text,duration,moremsg)
-	def showWarning(self,text,duration=2000,moremsg=''):
+	def showWarning(self,text,duration=1000,moremsg=''):
 		return self.infoBar.showWarning(text,duration,moremsg)
-	def showError(self,text,duration=2000,moremsg=''):
+	def showError(self,text,duration=1000,moremsg=''):
 		return self.infoBar.showError(text,duration,moremsg)
 	def clearAllInfo(self):
 		return self.infoBar.clearAllInfo()
@@ -1910,3 +1922,14 @@ class LingmoWindow(LingmoFrame):
 		self.loadWidgetOpacityAnimation1.setStartValue(self.loadWidgetOpacity)
 		self.loadWidgetOpacityAnimation1.setEndValue(val)
 		self.loadWidgetOpacityAnimation.start()
+	def showLoading(self,text='',cancel=True):
+		if text=='':
+			text=self.tr('Loading')
+		self.cancel=cancel
+		self.setLoadWidgetOpacity(1)
+	def hideLoading(self):
+		self.setLoadWidgetOpacity(0)
+	def cancelLoading(self):
+		if self.cancel:
+			self.hideLoading()
+		
