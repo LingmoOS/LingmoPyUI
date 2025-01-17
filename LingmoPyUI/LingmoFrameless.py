@@ -3,10 +3,11 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 from . import LingmoTools
+from . import LingmoTheme
 
 class LingmoFrameless(QObject):
 	def __init__(self,parent:QWidget,appbar,maximizeButton,minimizeButton,closeButton,
-                topmost=False,disabled=False,fixsize=False,effect='normal',effective=False,
+                topmost=False,disabled=False,fixSize=False,effect='normal',effective=False,
                 availableEffects=[],isDarkMode=False,useSystemEffect=False,show=True):
 		super().__init__(parent)
 		self.appbar=appbar	
@@ -17,7 +18,7 @@ class LingmoFrameless(QObject):
 		if self.topmost:
 			self.setWindowTopMost(self.topmost)
 		self.disabled=disabled
-		self.fixSize=fixsize
+		self.fixSize=fixSize
 		self.effect=effect
 		self.effective=effective
 		self.availableEffects=availableEffects
@@ -96,10 +97,7 @@ class LingmoFrameless(QObject):
 				offset=clickTimer-self.clickTimer
 				self.clickTimer=clickTimer
 				if offset<300:
-					if self.parent().isMaximized():
-						self.parent().showNormal()
-					else:
-						self.parent().showMaximized()
+					self.appbar.maxClickListener()
 				else:
 					self.parent().windowHandle().startSystemMove()
 	def onMouseRelease(self):
@@ -131,4 +129,8 @@ class LingmoFrameless(QObject):
 					elif p.y()>self.parent().height()-self.margins:
 						self.edges = Qt.Edge.BottomEdge
 					self.updateCursor(self.edges)
+	def setEffective(self,val):
+		self.effective=val
+		if val:
+			LingmoTheme.instance.blurBehindWindowEnabled=False
 		

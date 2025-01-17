@@ -201,9 +201,10 @@ class LingmoLabel(QLabel):
 			self.needUpdate.emit()
 		return super().event(e)
 class LingmoAcrylic(LingmoFrame):
-	def __init__(self,parent=None,show=True,tintColor=QColor(255,255,255,255),luminosity=0.01,noiseOpacity=0.02,target:QWidget=None,blurRadius=32,targetRect: QRect =None):
+	def __init__(self,parent=None,show=True,tintOpacity=0.65,tintColor=QColor(255,255,255,255),luminosity=0.01,noiseOpacity=0.02,target:QWidget=None,blurRadius=32,targetRect: QRect =None):
 		super().__init__(parent,show)
 		self.tintColor=tintColor
+		self.tintOpacity=tintOpacity
 		self.luminosity=luminosity
 		self.noiseOpacity=noiseOpacity
 		self.target=target
@@ -218,14 +219,14 @@ class LingmoAcrylic(LingmoFrame):
 		self.tintWidget.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
 		self.imageWidget=LingmoLabel(self)
 		self.imageWidget.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
-		self.imageWidget.setPixmap('./Image/noise.png')
+		self.imageWidget.setPixmap(QPixmap('./Image/noise.png'))
 		self.imageWidget.addStyleSheet('background-repeat','repeat')
 	def updateEvent(self):
 		try:
 			self.blurEffect.setBlurRadius(self.blurRadius)
 			self.blurWidget.setGeometry(self.targetRect)
 			self.luminosityWidget.addStyleSheet('background-color',QColor(1,1,1,self.luminosity*255))
-			self.tintWidget.addStyleSheet('background-color',self.tintColor)
+			self.tintWidget.addStyleSheet('background-color',QColor(self.tintColor.red(),self.tintColor.green(),self.tintColor.blue(),self.tintOpacity))
 			self.imageWidget.setWindowOpacity(self.noiseOpacity)
 		except:
 			pass
@@ -317,8 +318,9 @@ class LingmoAppBar(LingmoFrame):
 	def updateEvent(self):
 		try:
 			self.raise_()
+			self.textColor=LingmoTheme.instance.fontPrimaryColor
 			self.addStyleSheet('background-color','transparent')
-			self.resize(self.parent().width(),30 if self.isVisible()else 0)
+			self.resize(self.width(),30 if self.isVisible()else 0)
 			lastButtonX=self.width()
 			if LingmoTools.isMacos():
 				if self.btnMaximize.isVisible():
@@ -345,6 +347,16 @@ class LingmoAppBar(LingmoFrame):
 			lastButtonX=self.btnStayTop.x() if self.btnStayTop.isVisible() else lastButtonX
 			if self.btnDark.isVisible():
 				self.btnDark.move(lastButtonX-self.btnDark.width(),self.height()/2-self.btnDark.height()/2)
+			if not LingmoTools.isMacos():
+				self.btnMaximize.setIconSource(LingmoIconDef.ChromeRestore if self.isRestore() else LingmoIconDef.ChromeMaximize)
+				self.btnMaximize.setContent(self.restoreText if self.isRestore() else self.maximizeText)	
+				self.btnStayTop.setContent(self.stayTopCancelText if self.stayTop() else self.stayTopText)
+				self.btnDark.setIconSource(LingmoIconDef.Brightness if  LingmoTheme.instance.dark()else LingmoIconDef.QuietHours)
+				self.btnDark.setIconColor(self.textColor)
+				self.btnStayTop.setIconColor(LingmoTheme.instance.primaryColor if self.stayTop() else self.textColor)
+				self.btnMinimize.setIconColor(self.textColor)
+				self.btnMaximize.setIconColor(self.textColor)
+				self.btnClose.setIconColor(self.textColor)
 		except:
 			pass
 	def maxClickListener(self):
@@ -358,8 +370,6 @@ class LingmoAppBar(LingmoFrame):
 				self.window().showNormal()
 			else:
 				self.window().showMaximized() 
-			self.btnMaximize.setIconSource(LingmoIconDef.ChromeRestore if self.isRestore() else LingmoIconDef.ChromeMaximize)
-			self.btnMaximize.setContent(self.restoreText if self.isRestore() else self.maximizeText)
 	def minClickListener(self):
 		self.window().showMinimized()
 	def closeClickListener(self):
@@ -367,15 +377,11 @@ class LingmoAppBar(LingmoFrame):
 	def stayTopClickListener(self):
 		if isinstance(self.window(),LingmoWindow):
 			self.window().setStayTop(not self.stayTop())
-			self.btnStayTop.setIconColor(LingmoTheme.instance.primaryColor if self.stayTop() else self.textColor)		
-			self.btnStayTop.setContent(self.stayTopCancelText if self.stayTop() else self.stayTopText)
 	def darkClickListener(self):
 		if LingmoTheme.instance.dark():
 			LingmoTheme.instance.darkMode=LingmoDefines.DarkMode.Light
-			self.btnDark.setIconSource(LingmoIconDef.QuietHours)
 		else:
 			LingmoTheme.instance.darkMode=LingmoDefines.DarkMode.Dark
-			self.btnDark.setIconSource(LingmoIconDef.Brightness)
 	def stayTop(self):
 		if isinstance(self.window(),LingmoWindow):
 			return self.window().stayTop
@@ -546,6 +552,7 @@ class LingmoDropDownBox(LingmoButton):
 		self.menu.showed.connect(self.onAboutToShow)
 		self.menu.hided.connect(self.onAboutToHide)
 		self.pressed.connect(self.showMenu)
+		self.parentWidget().pressed.connect(self.hideMenu)
 	def focusOutEvent(self, event):
 		self.hideMenu()
 		return super().focusOutEvent(event)
@@ -572,7 +579,7 @@ class LingmoDropDownBox(LingmoButton):
 			self.moveMenu()
 			self.menu.showMenu()
 	def hideMenu(self):
-		if not self.menu.isHovered():
+		if not (self.menu.isHovered() or self.isHovered()):
 			self.menu.hideMenu()
 	def addItem(self,item):
 		self.menu.addItem(item)
@@ -772,6 +779,9 @@ class LingmoIconButton(LingmoFrame):
 	def closeEvent(self, event):
 		self.tooltip.close()
 		return super().closeEvent(event)
+	def hideEvent(self, event):
+		self.tooltip.hide()
+		return super().hideEvent(event)
 class LingmoImageButton(LingmoFrame):
 	def __init__(self,normalImage: str,parent=None,show=True,hoveredImage: str|None = None,pushedImage: str|None = None):
 		super().__init__(parent,show)
@@ -1168,6 +1178,7 @@ class LingmoMenu(LingmoFrame):
 		self.scrollbar.setOffsetIncrease(5)
 		self.scrollbar.setOffsetPerpendicalar(5)
 		self.autoResize=autoResize
+		self.hideAnimation.finished.connect(self.hide)
 	def updateEvent(self):
 		try:
 			if self.position:
@@ -1205,7 +1216,6 @@ class LingmoMenu(LingmoFrame):
 	def hideMenu(self):
 		self.hideAnimation.setDuration(83 if LingmoTheme.instance._animationEnabled and self.animationEnabled else 0)
 		self.hideAnimation.start()
-		self.setVisible(False)
 		for i in self.items:
 			if i.subMenu:
 				i.subMenu.hideMenu()
@@ -1370,7 +1380,7 @@ class LingmoProgressRing(LingmoFrame):
 	def setProgress(self,val):
 		self.visualPosition=val
 class LingmoScrollBar(LingmoFrame):
-	def __init__(self,parent=None,target:QWidget =None,show=True,orientation=Qt.Orientation.Horizontal,color=QColor(159,159,159,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255)):
+	def __init__(self,parent=None,target:QWidget =None,show=True,orientation=Qt.Orientation.Horizontal,color=QColor(159,159,159,255)if LingmoTheme.instance.dark() else QColor(138,138,138,255),autoOffsetDecrease=False,autoOffsetIncrease=False):
 		super().__init__(parent,show)
 		self.orientation=orientation
 		self.target=target
@@ -1413,6 +1423,8 @@ class LingmoScrollBar(LingmoFrame):
 		self.offsetDecrease=0
 		self.offsetIncrease=0
 		self.offsetPerpendicular=0
+		self.autoOffsetDecrease=autoOffsetDecrease
+		self.autoOffsetIncrease=autoOffsetIncrease
 	def updateEvent(self):
 		try:
 			self.horizontalPadding=15 if self.horizontal()else 3
@@ -1465,6 +1477,10 @@ class LingmoScrollBar(LingmoFrame):
 			else:
 				self.bar.move(self.horizontalPadding+self.position*(self.width()-2*self.horizontalPadding-self.bar.width()) if self.horizontal() else self.width()/2-self.bar.width()/2,
 					self.verticalPadding+self.position*(self.height()-2*self.verticalPadding-self.bar.height()) if self.vertical() else self.height()/2-self.bar.height()/2)
+			if self.autoOffsetDecrease:
+				self.setOffsetDecrease(self.width() if self.vertical() else self.height())
+			if self.autoOffsetIncrease:
+				self.setOffsetIncrease(self.width() if self.vertical() else self.height())
 		except:
 			pass
 	def horizontal(self):
@@ -1730,15 +1746,24 @@ class LingmoToolTip(LingmoFrame):
 	def setContent(self,val):
 		self.content=val
 class LingmoWindow(LingmoFrame):
-	def __init__(self,parent=None,show=True,title='Lingmo Window',windowIcon=LingmoApp.windowIcon,launchMode=LingmoDefines.LaunchMode.Stantard,
+	lazyLoad=Signal()
+	initArgument=Signal(tuple)
+	def __init__(self,parent=None,title='Lingmo Window',windowIcon=LingmoApp.windowIcon,launchMode=LingmoDefines.LaunchMode.Stantard,
 			argument=({}),fixSize=False,fitsAppBarWindows=False,tintOpacity=0.80 if LingmoTheme.instance.dark() else 0.75,blurRadius=60,
 			stayTop=False,showDark=False,showClose=True,showMinimize=True,showMaximize=True,showStayTop=False,
-			autoMaximize=True,autoCenter=True,autoDestroy=True,useSystemAppBar=LingmoApp.userSystemAppBar,__margins=0):
+			autoMaximize=False,autoVisible=True,autoCenter=True,autoDestroy=True,useSystemAppBar=LingmoApp.useSystemAppBar,margins=0,width=640,height=480):
 		super().__init__(parent,show=False)
+		self.resize(width,height)
+		self.loadWidget=LingmoFrame(show=False)
+		self.loadWidget.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+		self.loadWidget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+		self.loadBackground=LingmoFrame(self.loadWidget)
+		self.loadBackground.addStyleSheet('background-color','#44000000')
+		self.loadWidget.show()
+		self.isLazyInit=True
 		self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 		self.launchMode=launchMode
 		self.argument=argument
-		self.fixSize=fixSize
 		self.fitsAppBarWindows=fitsAppBarWindows
 		self.tintOpacity=tintOpacity
 		self.blurRadius=blurRadius
@@ -1748,21 +1773,77 @@ class LingmoWindow(LingmoFrame):
 		self.stayTop=stayTop
 		self.background=LingmoFrame(self)
 		self.appbar=LingmoAppBar(self.background,title=self.windowTitle(),icon=self.windowIcon())
+		self.frameless=LingmoFrameless(self,self.appbar,self.appbar.btnMaximize,self.appbar.btnMinimize,self.appbar.btnClose,disabled=useSystemAppBar,fixSize=fixSize,show=autoVisible,
+							useSystemEffect=not LingmoTheme.instance.blurBehindWindowEnabled)
+		self.imgBack=LingmoLabel(self.background,show=False)
+		self.ancrylic=LingmoAcrylic(self.background,target=self.imgBack,tintOpacity=self.tintOpacity,blurRadius=self.blurRadius,tintColor=QColor(0,0,0,255)if LingmoTheme.instance.dark()else QColor(255,255,255,255),
+							targetRect=QRect(self.x()-self.screen().virtualGeometry().x(),self.y()-self.screen().virtualGeometry().y(),self.width(),self.height()))
 		self.contentItem=LingmoFrame(self.background)
-		self.frameless=LingmoFrameless(self,self.appbar,self.appbar.btnMaximize,self.appbar.btnMinimize,self.appbar.btnClose,show)
+		LingmoTheme.instance.desktopImagePathChanged.connect(self.onDesktopImagePathChanged)
+		LingmoTheme.instance.blurBehindWindowEnabledChanged.connect(self.onBlurBehindWindowEnabledChanged)
 		self.moved.connect(self.frameless.onMouseMove)
 		self.pressed.connect(self.frameless.onMousePress)
 		self.released.connect(self.frameless.onMouseRelease)
-		#self.setStayTop(stayTop)
-		self.show()
-		self.contentItem.addStyleSheet('border-radius','4px 4px 4px 4px')
-		self.background.addStyleSheet('background-color',self.palette().color(QPalette.ColorRole.Window))
-		self.background.addStyleSheet('border-radius',LingmoTheme.instance._roundWindowRadius)
+		self.setStayTop(stayTop)
+		self.margins=margins
+		self.resizeBorderWidth=1
+		self.resizeBorderColor=QColor()
+		self.backgroundColor=QColor()
+		self.hideShadow=False
+		self.useSystemAppbar=useSystemAppBar
+		if autoVisible:
+			if autoMaximize:
+				self.showMaximized()
+			else:
+				self.show()
+		if autoCenter:
+			self.moveWindowToDesktopCenter()
 		self.setWindowIcon(QPixmap(self.windowIconPath))
+		self.setShowDark(showDark)
+		self.setShowStayTop(showStayTop)
+		self.setShowMinimize(showMinimize)
+		self.setShowMaximize(showMaximize)
+		self.setShowClose(showClose)
+		self.autoDestroy=autoDestroy
+		self.timerUpdateImage=QTimer()
+		self.timerUpdateImage.timeout.connect(self.onTimerTimeout)
+		self.timerUpdateImage.start(150)
+		self.infoBar=LingmoInfoBar(self.contentItem)
+		self.loadWidgetOpacity=0
+		self.loadWidgetOpacityAnimation=QSequentialAnimationGroup()
+		self.loadWidgetOpacityAnimation.addPause(83)
+		self.loadWidgetOpacityAnimation1=LingmoAnimation(self,'loadWidgetOpacity')
+		self.loadWidgetOpacityAnimation1.setDuration(167)
+		self.unloaded=True
 	def updateEvent(self):
 		try:
+			self.resizeBorderColor=(QColor(51,51,51,255)if LingmoTheme.instance.dark() else QColor(110,110,110,255))if self.isActiveWindow() else (QColor(61,61,61,255)if LingmoTheme.instance.dark()else QColor(167,167,167,255))
+			if self.frameless.effective and self.isActiveWindow():
+				if self.frameless.effect=='dwm-blur':
+					self.backgroundColor=LingmoTools.withOpacity(LingmoTheme.instance.windowActiveBackgroundColor)
+				else:
+					self.backgroundColor='transparent'
+			elif self.isActiveWindow():
+				self.backgroundColor=LingmoTheme.instance.windowActiveBackgroundColor
+			else:
+				self.backgroundColor=LingmoTheme.instance.windowBackgroundColor
+			self.background.addStyleSheet('background-color',self.backgroundColor)
+			self.background.addStyleSheet('border-radius',0 if self.isMaximized() or self.isFullScreen() else LingmoTheme.instance._roundWindowRadius)
 			self.background.resize(self.size())
-			self.contentItem.setGeometry(0,self.appbar.height(),self.width(),self.height()-self.appbar.height())
+			self.appbar.resize(self.width(),30 if not(self.useSystemAppbar or self.fitsAppBarWindows) else 0)
+			self.contentItem.setGeometry(self.resizeBorderWidth,self.appbar.height(),self.background.width()-2*self.resizeBorderWidth,self.background.height()-self.appbar.height()-2*self.resizeBorderWidth)
+			self.background.addStyleSheet('border-style','solid')
+			self.background.addStyleSheet('border-color',self.resizeBorderColor)
+			self.background.addStyleSheet('border-width',self.resizeBorderWidth)
+			self.appbar.resize(self.background.width(),self.appbar.height())
+			self.imgBack.resize(LingmoTools.desktopAvailableGeometry(self).size())
+			self.loadWidget.setGeometry(self.geometry())
+			self.loadBackground.resize(self.loadWidget.size())
+			print(self.loadWidgetOpacity)
+			if self.unloaded:
+				self.unloaded=False
+				self.setLoadWidgetOpacity(1)
+			self.loadWidget.setWindowOpacity(self.loadWidgetOpacity)
 		except:
 			pass
 	def setStayTop(self,val):
@@ -1771,3 +1852,61 @@ class LingmoWindow(LingmoFrame):
 	def setWindowIconPath(self,val):
 		self.windowIconPath=val
 		self.setWindowIcon(QIcon(val))
+	def setShowDark(self,val):
+		return self.appbar.setShowDark(val)
+	def setShowStayTop(self,val):
+		return self.appbar.setShowStayTop(val)
+	def setShowMinimize(self,val):
+		return self.appbar.setShowMinimize(val)
+	def setShowMaximize(self,val):
+		return self.appbar.setShowMaximize(val)
+	def setShowClose(self,val):
+		return self.appbar.setShowClose(val)
+	def moveWindowToDesktopCenter(self):
+		availableGeometry=LingmoTools.desktopAvailableGeometry(self)
+		self.move(availableGeometry.width()/2-self.width()/2,availableGeometry.height()/2-self.height()/2)
+	def showEvent(self, event):
+		if self.isVisible and self.isLazyInit:
+			self.lazyLoad.emit()
+			self.isLazyInit=False
+		return super().showEvent(event)
+	def closeEvent(self, event):
+		self.closeListener()
+	def closeListener(self):
+		if self.autoDestroy:
+			self.loadWidget.destroy()
+			self.loadWidget.deleteLater()
+			self.destroy()
+			self.deleteLater()
+		else:
+			self.hide()
+	def fixWindowSize(self):
+		if self.frameless.fixSize:
+			self.setMaximumSize(self.size())
+			self.setMinimumSize(self.size())
+	def setHitTestVisible(self,val):
+		self.frameless.setHitTestVisible(val)
+	def onTimerTimeout(self):
+		self.imgBack.setPixmap(QPixmap(LingmoTheme.instance._desktopImagePath))
+	def onDesktopImagePathChanged(self):
+		self.timerUpdateImage.stop()
+		self.timerUpdateImage.start()
+	def onBlurBehindWindowEnabledChanged(self):
+		if LingmoTheme.instance.blurBehindWindowEnabled:
+			self.imgBack.setPixmap(QPixmap(LingmoTheme.instance._desktopImagePath))
+		else:
+			self.imgBack.setPixmap(QPixmap())
+	def showSuccess(self,text,duration=2000,moremsg=''):
+		return self.infoBar.showSuccess(text,duration,moremsg)
+	def showInfo(self,text,duration=2000,moremsg=''):
+		return self.infoBar.showInfo(text,duration,moremsg)
+	def showWarning(self,text,duration=2000,moremsg=''):
+		return self.infoBar.showWarning(text,duration,moremsg)
+	def showError(self,text,duration=2000,moremsg=''):
+		return self.infoBar.showError(text,duration,moremsg)
+	def clearAllInfo(self):
+		return self.infoBar.clearAllInfo()
+	def setLoadWidgetOpacity(self,val):
+		self.loadWidgetOpacityAnimation1.setStartValue(self.loadWidgetOpacity)
+		self.loadWidgetOpacityAnimation1.setEndValue(val)
+		self.loadWidgetOpacityAnimation.start()

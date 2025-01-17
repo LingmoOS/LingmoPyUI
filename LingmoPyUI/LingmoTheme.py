@@ -72,7 +72,7 @@ class LingmoTheme(QObject):
         self.backgroundColor= QColor(0, 0, 0, 255) if isDark else QColor(255, 255, 255, 255)
         self.dividerColor= QColor(80, 80, 80, 255) if isDark else QColor(210, 210, 210, 255)
         self.windowBackgroundColor= QColor(32, 32, 32, 255) if isDark else QColor(237, 237, 237, 255)
-        self.windowActiveBackgroundColo= QColor(26, 26, 26, 255) if isDark else QColor(243, 243, 243, 255)
+        self.windowActiveBackgroundColor= QColor(26, 26, 26, 255) if isDark else QColor(243, 243, 243, 255)
         self.fontPrimaryColor= QColor(248, 248, 248, 255) if isDark else QColor(7, 7, 7, 255)
         self.fontSecondaryColor= QColor(222, 222, 222, 255) if isDark else QColor(102, 102, 102, 255)
         self.fontTertiaryColor= QColor(200, 200, 200, 255) if isDark else QColor(153, 153, 153, 255)
@@ -96,7 +96,7 @@ class LingmoTheme(QObject):
             return False
     def funcToRun(self):
         self._mutex.lock()
-        path=LingmoTools.getWallPaperFilePath()
+        path=LingmoTools.getWallpaperFilePath()
         if self._desktopImagePath != path:
             if self._desktopImagePath=='':
                 self._watcher.removePath(self._desktopImagePath)

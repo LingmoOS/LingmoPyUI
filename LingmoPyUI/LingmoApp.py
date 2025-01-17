@@ -9,7 +9,7 @@ from . import LingmoIconDef
 windowIcon='./LingmoPyUI/Image/icon.png'
 locale=QLocale()
 launcher=QObject()
-userSystemAppBar=False
+useSystemAppBar=False
 _app=QApplication([])
 _translator=QTranslator(QApplication.instance())
 QApplication.installTranslator(_translator)

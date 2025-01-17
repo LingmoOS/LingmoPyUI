@@ -176,8 +176,8 @@ def isWindows10OrGreater():
     else:
         return False
 
-def desktopAvailableGeometry(window):
-    return QRect()
+def desktopAvailableGeometry(window:QWidget):
+    return window.screen().availableGeometry()
 
 def getWallpaperFilePath():
     if isWin():

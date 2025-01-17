@@ -1,16 +1,12 @@
 import LingmoPyUI
-
 class ExampleApp():
     def __init__(self):
-        self.window = LingmoPyUI.LingmoWindow()
+        self.window = LingmoPyUI.LingmoWindow(showDark=True,showStayTop=True,width=500,height=500,title='Example')
         self.frame = LingmoPyUI.LingmoFrame(self.window.contentItem)
         self.setup_ui()
-
     def setup_ui(self):
-        self.frame.resize(500, 1000)
-        self.frame.setWindowTitle('Example')
 
-        self.window.resize(500, 500)
+        self.frame.resize(500,1000)
 
         a = 0
 
@@ -33,7 +29,7 @@ class ExampleApp():
         self.iconButton.move(0,a)
         a += 40
 
-        self.scrollbar = LingmoPyUI.LingmoScrollBar(self.window.contentItem, target=self.frame)
+        self.scrollbar = LingmoPyUI.LingmoScrollBar(self.window.contentItem, target=self.frame,autoOffsetIncrease=True)
         self.scrollbar.setOrientation(LingmoPyUI.Qt.Orientation.Vertical)
 
         self.tooltip = LingmoPyUI.LingmoToolTip(self.button, content="ToolTip")
@@ -84,11 +80,10 @@ class ExampleApp():
             self.dropDownBox.addItem(item)
         a+=40
 
-        self.infoBar=LingmoPyUI.LingmoInfoBar(self.window)
-        self.progressButton.pressed.connect(lambda:self.infoBar.showSuccess('This is all the widgets',1500,'OK'))
-        self.filledButton.pressed.connect(lambda:self.infoBar.showWarning('This is all the widgets',1500,'OK'))
+        self.progressButton.pressed.connect(lambda:self.window.showSuccess('This is all the widgets',1500,'OK'))
+        self.filledButton.pressed.connect(lambda:self.window.showWarning('This is all the widgets',1500,'OK'))
         self.loadingButton.pressed.connect(self.showInfos)
-        self.iconButton.pressed.connect(lambda:self.infoBar.showError('This is all the widgets',1500,'OK'))
+        self.iconButton.pressed.connect(lambda:self.window.showError('This is all the widgets',1500,'OK'))
 
     def run(self):
         LingmoPyUI.LingmoApp.run()
@@ -97,9 +92,9 @@ class ExampleApp():
         self.progressButton.setProgress(1)
     
     def showInfos(self):
-        self.infoBar.showInfo('111',1500,'222')
-        self.infoBar.showInfo('222',2000,'333')
-        self.infoBar.showInfo('333',2500,'444')
+        self.window.showInfo('111',1500,'222')
+        self.window.showInfo('222',2000,'333')
+        self.window.showInfo('333',2500,'444')
 
 if __name__ == "__main__":
     app = ExampleApp()
