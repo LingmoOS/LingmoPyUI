@@ -1,4 +1,4 @@
-version='1.0.0'
+version='1.0.11'
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
