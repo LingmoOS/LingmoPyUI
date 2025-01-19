@@ -37,3 +37,9 @@ def roundIconSize(size):
         return 48
     else:
         return size
+
+smallRadius = 8.0
+mediumRadius = 10.0
+bigRadius = 12.0
+hugeRadius = 14.0
+windowRadius = 11.0
