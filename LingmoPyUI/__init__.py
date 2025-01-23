@@ -2940,6 +2940,36 @@ class LingmoText(LingmoLabel):
         self.color = val
 
 
+class LingmoTextBox(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
+
+
+class LingmoTextBoxBackground(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
+
+
+class LingmoTextBoxMenu(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
+
+
 class LingmoTextButton(LingmoFrame):
     def __init__(
         self,
