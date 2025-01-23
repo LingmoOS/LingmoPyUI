@@ -765,6 +765,16 @@ class LingmoButton(LingmoFrame):
         self.autoResize = val
 
 
+class LingmoCheckBox(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
+
+
 class LingmoClip(LingmoFrame):
     def __init__(self, parent=None, show=True, radius=0):
         super().__init__(parent, show)
@@ -892,6 +902,26 @@ class LingmoControlBackground(LingmoFrame):
     def setBorderColor(self, val):
         self.borderColor = val
         self.borderColorUnsetted = False
+
+
+class LingmoCustomDialog(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
+
+
+class LingmoDelayButton(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
 
 
 class LingmoDropDownBox(LingmoButton):
@@ -2314,6 +2344,9 @@ class LingmoProgressRing(LingmoFrame):
 
     def setProgress(self, val):
         self.visualPosition = val
+    
+    def setStrokeWidth(self, val):
+        self.strokeWidth = val
 
 
 class LingmoScrollBar(LingmoFrame):
@@ -2682,7 +2715,7 @@ class LingmoSlider(LingmoFrame):
         orientation=Qt.Orientation.Horizontal,
     ):
         super().__init__(parent, show)
-        self.tooltipEnabled = True
+        self.tooltipEnabled = tooltipEnabled
         self.background = LingmoFrame(self)
         self.backgroundLength = 180
         self.backgroundWidth = 6
@@ -3403,22 +3436,25 @@ class LingmoWindow(LingmoFrame):
 
 class LingmoBusyIndicator(LingmoFrame):
     def __init__(
-        self
+        self,
+        running=True
     ):
-        pass
+        self.running=running
+        self.ring=LingmoProgressRing()
     
     def updateEvent(self):
-        pass
-
-
-class LingmoCheckBox(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
+        self.ring.setStrokeWidth(
+            3 if self.ring.width() > 40 else 4
+        )
+        self.ring.setVisible(self.running)
+        self.ring.resize(
+            max(self.width(),self.height()),
+            max(self.width(),self.height())
+        )
+        self.ring.move(
+            self.width() / 2 - self.ring.width() / 2,
+            self.height() / 2 - self.ring.width() / 2
+        )
 
 
 class LingmoCheckDelegate(LingmoFrame):
@@ -3451,27 +3487,7 @@ class LingmoComboBox(LingmoFrame):
         pass
 
 
-class LingmoDelayButton(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
 class LingmoDial(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoBusyIndicator(LingmoFrame):
     def __init__(
         self
     ):
