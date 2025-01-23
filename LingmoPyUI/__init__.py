@@ -2231,6 +2231,16 @@ class LingmoProgressButton(LingmoButton):
         self.setRectBackHeight(self.clip.height() if self.progress == 1 else 3)
 
 
+class LingmoPopup(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
+
+
 class LingmoProgressRing(LingmoFrame):
     def __init__(
         self,
@@ -3608,16 +3618,6 @@ class LingmoPageIndicator(LingmoFrame):
 
 
 class LingmoPane(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoPopup(LingmoFrame):
     def __init__(
         self
     ):
