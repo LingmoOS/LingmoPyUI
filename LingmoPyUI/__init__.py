@@ -1,4 +1,4 @@
-version='1.0.12'
+version='1.0.11'
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -72,7 +72,7 @@ class LingmoFrame(QFrame):
         widgetCount += 1
         self.setObjectName("LingmoWidget" + str(widgetCount))
         self.ispressed = False
-        if parent:
+        if isinstance(parent,(LingmoFrame,LingmoLabel)):
             self.pressed.connect(self.parent().pressed.emit)
             self.released.connect(self.parent().released.emit)
             self.hovered.connect(self.parent().hovered.emit)
@@ -168,14 +168,6 @@ class LingmoLabel(QLabel):
         widgetCount += 1
         self.setObjectName("LingmoWidget" + str(widgetCount))
         self.autoAdjust = autoAdjust
-        if parent:
-            self.pressed.connect(self.parent().pressed.emit)
-            self.released.connect(self.parent().released.emit)
-            self.hovered.connect(self.parent().hovered.emit)
-            self.left.connect(self.parent().left.emit)
-            self.rightPressed.connect(self.parent().rightPressed.emit)
-            self.rightReleased.connect(self.parent().rightReleased.emit)
-            self.moved.connect(self.parent().moved.emit)
 
     def __update__(self):
         self.update()

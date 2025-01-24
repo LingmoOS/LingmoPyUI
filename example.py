@@ -18,6 +18,7 @@ class ExampleApp:
         self.button = LingmoPyUI.LingmoButton(self.frame)
         self.button.setContent("LingmoButton")
         self.button.move(0, a)
+        self.button.pressed.connect(lambda:print('pressed'))
         a += 40
 
         self.slider1 = LingmoPyUI.LingmoSlider(self.frame)
@@ -34,6 +35,7 @@ class ExampleApp:
         )
         self.iconButton.setIconBorderSize(40, 30)
         self.iconButton.move(0, a)
+        self.iconButton.pressed.connect(lambda:print('pressed'))
         a += 40
 
         self.scrollbar = LingmoPyUI.LingmoScrollBar(
