@@ -10,8 +10,11 @@ import sys
 
 from . import LingmoTheme
 
-user32 = ctypes.WinDLL("user32", use_last_error=True)
-SPI_GETDESKWALLPAPER = 0x73
+try:
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    SPI_GETDESKWALLPAPER = 0x73
+except:
+    pass
 
 prime = 0x100000001B3
 basis = 0xCBF29CE484222325

@@ -20,7 +20,7 @@ try:
     from ctypes import windll
 
     windll.shell32.SetCurrentProcessExplicitAppUserModelID(LingmoApp.appid)
-except ImportError:
+except:
     pass
 
 
@@ -1056,6 +1056,14 @@ class LingmoFilledButton(LingmoFrame):
             )
         except:
             pass
+
+
+class LingmoFilledIconButton(LingmoFilledButton):
+    def __init__(self, parent=None, show=True, content=""):
+        super().__init__(parent, show, content)
+    
+    def updateEvent(self):
+        return super().updateEvent()
 
 
 class LingmoFocusRectangle(LingmoFrame):
