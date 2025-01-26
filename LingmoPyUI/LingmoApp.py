@@ -4,9 +4,12 @@ from PySide6.QtGui import *
 
 import os
 import sys
+import platform
 from . import LingmoIconDef
 
 packagePath = os.path.dirname(os.path.abspath(__file__))
+if platform.system()=='Linux':
+    packagePath+='/../../Lib/LingmoPyUI'
 appid = "com.lingmo.pyui.1.0"
 windowIcon = packagePath + "/Image/icon.png"
 locale = QLocale()

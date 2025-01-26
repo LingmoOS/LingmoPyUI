@@ -1,6 +1,5 @@
 import LingmoPyUI
 
-
 class ExampleApp:
     def __init__(self):
         self.window = LingmoPyUI.LingmoWindow(
