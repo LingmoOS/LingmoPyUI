@@ -1,4 +1,4 @@
-version='1.0.11'
+version='1.0.12'
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -3194,12 +3194,13 @@ class LingmoWindow(LingmoFrame):
         self.loadWidget.setWindowFlags(
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.ToolTip
         )
-        self.loadWidget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.loadBackground = LingmoFrame(self.loadWidget)
-        self.loadBackground.addStyleSheet("background-color", "#44000000")
-        self.loadRing = LingmoProgressRing(self.loadBackground)
-        self.loadText = LingmoText(self.loadBackground, text=self.tr("Loading..."))
-        self.loadWidget.show()
+        if LingmoTools.isWin():
+            self.loadWidget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+            self.loadBackground = LingmoFrame(self.loadWidget)
+            self.loadBackground.addStyleSheet("background-color", "#44000000")
+            self.loadRing = LingmoProgressRing(self.loadBackground)
+            self.loadText = LingmoText(self.loadBackground, text=self.tr("Loading..."))
+            self.loadWidget.show()
         self.isLazyInit = True
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.launchMode = launchMode
@@ -3288,7 +3289,9 @@ class LingmoWindow(LingmoFrame):
         self.loadWidgetOpacityAnimation.addAnimation(self.loadWidgetOpacityAnimation1)
         self.unloaded = True
         self.cancel = False
-        self.loadBackground.pressed.connect(self.cancelLoading)
+        if LingmoTools.isWin():
+            self.loadBackground.pressed.connect(self.cancelLoading)
+        self.show()
 
     def updateEvent(self):
         try:
@@ -3343,9 +3346,10 @@ class LingmoWindow(LingmoFrame):
             self.background.addStyleSheet("border-width", self.resizeBorderWidth)
             self.appbar.resize(self.background.width(), self.appbar.height())
             self.imgBack.resize(LingmoTools.desktopAvailableGeometry(self).size())
-            self.loadWidget.setGeometry(self.geometry())
-            self.loadBackground.resize(self.loadWidget.size())
-            self.loadWidget.show()
+            if LingmoTools.isWin():
+                self.loadWidget.setGeometry(self.geometry())
+                self.loadBackground.resize(self.loadWidget.size())
+                self.loadWidget.show()
             self.ancrylic.resize(self.size())
             self.ancrylic.addStyleSheet(
                 "border-radius",
@@ -3358,16 +3362,17 @@ class LingmoWindow(LingmoFrame):
             if self.unloaded:
                 self.unloaded = False
                 self.setLoadWidgetOpacity(0)
-            self.loadWidget.setWindowOpacity(self.loadWidgetOpacity)
-            self.loadRing.move(
-                self.background.width() / 2 - self.loadRing.width() / 2,
-                self.height() / 2
-                - (self.loadRing.height() + 8 + self.loadText.height()) / 2,
-            )
-            self.loadText.move(
-                self.background.width() / 2 - self.loadText.width() / 2,
-                self.loadRing.y() + self.loadRing.height() + 8,
-            )
+            if LingmoTools.isWin():
+                self.loadWidget.setWindowOpacity(self.loadWidgetOpacity)
+                self.loadRing.move(
+                    self.background.width() / 2 - self.loadRing.width() / 2,
+                    self.height() / 2
+                    - (self.loadRing.height() + 8 + self.loadText.height()) / 2,
+                )
+                self.loadText.move(
+                    self.background.width() / 2 - self.loadText.width() / 2,
+                    self.loadRing.y() + self.loadRing.height() + 8,
+                )
         except:
             pass
 
