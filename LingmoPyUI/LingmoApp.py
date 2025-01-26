@@ -9,8 +9,9 @@ from . import LingmoIconDef
 
 packagePath = os.path.dirname(os.path.abspath(__file__))
 if platform.system()=='Linux':
-    packagePath+='/../../Lib/LingmoPyUI'
-appid = "com.lingmo.pyui.1.0"
+    packagePath=packagePath.split('/')
+    packagePath='/'.join(packagePath[0:-4])+'/Lib/site-packages/LingmoPyUI'
+appid = "org.lingmo.pyui.1.0"
 windowIcon = packagePath + "/Image/icon.png"
 locale = QLocale()
 launcher = QObject()
