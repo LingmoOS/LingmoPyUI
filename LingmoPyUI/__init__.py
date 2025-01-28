@@ -759,12 +759,123 @@ class LingmoButton(LingmoFrame):
 
 class LingmoCheckBox(LingmoFrame):
     def __init__(
-        self
+        self,
+        content='',
+        textRight=True,
+        textSpacing=6,
+        checked=False,
+        size_=18,
+        animationEnabled=LingmoTheme.instance._animationEnabled,
+        indeterminate=False
     ):
-        pass
-    
+        super().__init__(self)
+        self.content=content
+        self.textRight=textRight
+        self.textSpacing=textSpacing
+        self.checked=checked
+        self.size_=size_
+        self.animationEnabled=animationEnabled
+        self.indeterminate=indeterminate
+        self.pressed.connect(self.clickListener)
+        self.iconFrame=LingmoFrame(self)
+        self.iconFrame.resize(self.size_,self.size_)
+        self.iconFrame.addStyleSheet('border-width',1)
+        self.iconFrame.addStyleSheet('border-style','solid')
+        self.iconFrame.addStyleSheet('border-radius',self.size_/2)
+        self.text=LingmoText(self,text=content)
     def updateEvent(self):
-        pass
+        try:
+            self.borderNormalColor=(
+                QColor(160,160,160,255)
+                if LingmoTheme.instance.dark() else
+                QColor(136,136,136,255) 
+            )
+            self.borderCheckedColor=LingmoTheme.instance.primaryColor
+            self.borderHoverColor=(
+                QColor(160,160,160,255)
+                if LingmoTheme.instance.dark() else
+                QColor(136,136,136,255) 
+            )
+            self.borderDisableColor=(
+                QColor(82,82,82,255)
+                if LingmoTheme.instance.dark() else
+                QColor(199,199,199,255) 
+            )
+            self.borderPressedColor=(
+                QColor(90,90,90,255)
+                if LingmoTheme.instance.dark() else
+                QColor(191,191,191,255) 
+            )
+            self.normalColor=(
+                QColor(45,45,45,255)
+                if LingmoTheme.instance.dark() else
+                QColor(247,247,247,255) 
+            )
+            self.checkedColor=LingmoTheme.instance.primaryColor
+            self.hoverColor=(
+                QColor(72,72,72,255)
+                if LingmoTheme.instance.dark() else
+                QColor(236,236,236,255) 
+            )
+            self.checkedHoverColor=(
+                self.checkedColor.darker(115)
+                if LingmoTheme.instance.dark() else
+                self.checkedColor.lighter(115) 
+            )
+            self.checkedPressedColor=(
+                self.checkedColor.darker(130)
+                if LingmoTheme.instance.dark() else
+                self.checkedColor.lighter(130) 
+            )
+            self.checkedDisableColor=(
+                QColor(82,82,82,255)
+                if LingmoTheme.instance.dark() else
+                QColor(199,199,199,255) 
+            )
+            self.disableColor=(
+                QColor(50,50,50,255)
+                if LingmoTheme.instance.dark() else
+                QColor(253,253,253,255) 
+            )
+            if self.textRight:
+                self.iconFrame.move(0,0)
+                self.text.move(self.iconFrame.x()+self.iconFrame.width()+self.textSpacing,0)
+            else:
+                self.text.move(0,0)
+                self.iconFrame.move(self.text.x()+self.text.width()+self.textSpacing,0)
+            self.borderColor=QColor()
+            if not self.isEnabled():
+                self.borderColor=self.borderDisableColor
+            elif self.checked:
+                self.borderColor=self.borderCheckedColor
+            elif self.isPressed():
+                self.borderColor=self.borderPressedColor
+            elif self.isHovered():
+                self.borderColor=self.borderHoverColor
+            else:
+                self.borderColor=self.borderNormalColor
+            self.color=QColor()
+            if self.checked:
+                if not self.isEnabled():
+                    self.color=self.checkedDisableColor
+                elif self.isPressed():
+                    self.color=self.checkedPressedColor
+                elif self.isHovered():
+                    self.color=self.checkedHoverColor
+                else:
+                    self.color=self.checkedColor
+            else:
+                if not self.isEnabled():
+                    self.color=self.disableColor
+                elif self.isHovered():
+                    self.color=self.hoverColor
+                else:
+                    self.color=self.normalColor
+            self.adjustSize()
+        except:
+            pass
+    def clickListener(self):
+        self.checked=not self.checked
 
 
 class LingmoClip(LingmoFrame):
