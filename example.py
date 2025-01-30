@@ -107,6 +107,10 @@ class ExampleApp:
 
         a+=40
 
+        self.delayButton = LingmoPyUI.LingmoDelayButton(self.frame,content='DelayButton')
+        self.delayButton.move(200,a)
+        a+=40
+
         self.progressButton.pressed.connect(
             lambda: self.window.showSuccess("This is all the widgets", 1500, "OK")
         )

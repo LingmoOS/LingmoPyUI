@@ -715,6 +715,7 @@ class LingmoButton(LingmoFrame):
         self.clickShadowChange = clickShadowChange
         self.autoResize = autoResize
         self.contentText.pressed.connect(self.pressed.emit)
+        self.contentText.released.connect(self.released.emit)
 
     def updateEvent(self):
         try:
@@ -900,7 +901,6 @@ class LingmoClip(LingmoFrame):
         super().__init__(parent, show)
         self.color = QColor(0, 0, 0, 0)
         self.effect = QGraphicsOpacityEffect(self)
-        self.effect.setOpacity(0.5)
         self.setGraphicsEffect(self.effect)
         self.radius = radius
 
@@ -1024,24 +1024,171 @@ class LingmoControlBackground(LingmoFrame):
         self.borderColorUnsetted = False
 
 
-class LingmoCustomDialog(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
+class LingmoDelayButton(LingmoButton):
+    def __init__(self, parent=None, show=True, content="", progress=0, delay=3000):
+        super().__init__(parent, show)
+        self.progress = progress
+        self.delay=delay
+        self.ctrlBg.deleteLater()
+        self.ctrlBg = LingmoControlBackground(self)
+        self.ctrlBg.setRadius(LingmoUnits.windowRadius)
+        self.clip = LingmoClip(
+            self.ctrlBg, radius=LingmoTheme.instance._roundWindowRadius
+        )
+        self.rectBack = LingmoFrame(self.clip)
+        self.setContent(content)
+        self.setClickShadowChange(False)
+        self.focusRect = LingmoFocusRectangle(self.clip)
+        self.focusRect.setRadius(4)
+        self.rectBackHeight = 3
+        self.progressAnimation=LingmoAnimation(self, 'progress')
+        self.progressAnimation.setDuration(self.delay)
+        self.widthAnimation = LingmoAnimation(self, "rectBackWidth")
+        self.widthAnimation.setDuration(self.delay)
+        self.heightAnimation = LingmoAnimation(self, "rectBackHeight")
+        self.heightAnimation.setDuration(167)
+        self.clip.resize(self.ctrlBg.size())
+        self.rectBackWidth = (self.ctrlBg.width() - 2 * self.horizontalPadding )* self.progress
+        self.rectBackLOffset=0
+        self.rectBackROffset=0
+        self.rectBackTOffset=0
+        self.rectBackBOffset=0
+        self.pressed.connect(self.pressListener)
+        self.released.connect(self.releaseListener)
+        self.widthAnimation.finished.connect(self.setProgress1)
+        self.widthAnimation.finished.connect(lambda:self.setRectBackHeight(self.clip.height()))
     def updateEvent(self):
-        pass
+        try:
+            if self.checked():
+                self.textNormalColor = (
+                    QColor(0, 0, 0, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(255, 255, 255, 255)
+                )
+                self.textPressedColor = self.textNormalColor
+                self.textDisabledColor = (
+                    QColor(173, 173, 173, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(255, 255, 255, 255)
+                )
+            else:
+                self.textNormalColor = (
+                    QColor(255, 255, 255, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(0, 0, 0, 255)
+                )
+                self.textPressedColor = (
+                    QColor(162, 162, 162, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(96, 96, 96, 255)
+                )
+                self.textDisabledColor = (
+                    QColor(131, 131, 131, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(160, 160, 160, 255)
+                )
+            super().updateEvent()
+            self.normalColor = (
+                LingmoTheme.instance.primaryColor
+                if self.checked()
+                else (
+                    QColor(62, 62, 62, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(254, 254, 254, 255)
+                )
+            )
+            self.hoverColor = (
+                (
+                    self.normalColor.darker(110)
+                    if LingmoTheme.instance.dark()
+                    else self.normalColor.lighter(110)
+                )
+                if self.checked()
+                else (
+                    QColor(68, 68, 68, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(246, 246, 246, 255)
+                )
+            )
+            self.disableColor = (
+                (
+                    QColor(82, 82, 82, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(199, 199, 199, 255)
+                )
+                if self.checked()
+                else (
+                    QColor(59, 59, 59, 255)
+                    if LingmoTheme.instance.dark()
+                    else QColor(244, 244, 244, 255)
+                )
+            )
+            self.pressedColor = (
+                self.normalColor.darker(120)
+                if LingmoTheme.instance.dark()
+                else self.normalColor.lighter(120)
+            )
+            self.clip.resize(self.ctrlBg.size())
+            if not self.isEnabled():
+                self.bgColor = self.disableColor
+            elif self.isPressed() and self.checked():
+                self.bgColor = self.pressedColor
+            elif self.isHovered():
+                self.bgColor = self.hoverColor
+            else:
+                self.bgColor = self.normalColor
+            self.ctrlBg.move(self.horizontalPadding, self.verticalPadding)
+            self.ctrlBg.setBorderWidth(0 if self.checked() else 1)
+            self.ctrlBg.setColor(self.bgColor)
+            self.rectBack.resize(self.rectBackWidth-self.rectBackLOffset-self.rectBackROffset, 
+                                self.rectBackHeight-self.rectBackTOffset-self.rectBackBOffset)
+            self.rectBackLOffset=max(0,LingmoUnits.windowRadius-self.rectBackHeight)
+            self.rectBackROffset=min(0,3-self.rectBackHeight)
+            self.rectBack.move(self.rectBackLOffset,self.clip.height()-self.rectBack.height())
+            self.rectBack.setVisible(not self.checked())
+            self.rectBack.addStyleSheet(
+                "background-color", LingmoTheme.instance.primaryColor
+            )
+            self.rectBack.addStyleSheet('border-bottom-left-radius',min(self.rectBackHeight,LingmoUnits.windowRadius))
+            self.rectBack.addStyleSheet('border-bottom-left-radius',min(self.rectBackHeight,LingmoUnits.windowRadius))
+        except:
+            pass
 
+    def checked(self):
+        return self.rectBackHeight == self.ctrlBg.height() and self.progress == 1
 
-class LingmoDelayButton(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
+    def setRectBackWidth(self, val):
+        if val != self.rectBackWidth:
+            self.widthAnimation.setStartValue(self.rectBackWidth)
+            self.widthAnimation.setEndValue(val)
+            self.widthAnimation.start()
+
+    def setRectBackHeight(self, val):
+        if val != self.rectBackHeight:
+            self.heightAnimation.setStartValue(self.rectBackHeight)
+            self.heightAnimation.setEndValue(val)
+            self.heightAnimation.start()
+
+    def setProgress(self, val):
+        self.setRectBackWidth((self.clip.width() - self.rectBackLOffset - self.rectBackROffset)* val)
     
-    def updateEvent(self):
-        pass
+    def pressListener(self):
+        if self.checked():
+            self.progress=0
+            self.rectBackWidth=0
+        else:
+            self.setProgress(1)
+    
+    def releaseListener(self):
+        if not self.checked():
+            self.widthAnimation.stop()
+            self.heightAnimation.stop()
+            self.progress=0
+            self.rectBackWidth=0
+            self.rectBackHeight=3
+
+    def setProgress1(self):
+        self.progress=1
 
 
 class LingmoDropDownBox(LingmoButton):
@@ -2227,16 +2374,15 @@ class LingmoProgressButton(LingmoButton):
         self.progress = progress
         self.ctrlBg.deleteLater()
         self.ctrlBg = LingmoControlBackground(self)
-        self.ctrlBg.setRadius(LingmoTheme.instance._roundWindowRadius)
+        self.ctrlBg.setRadius(LingmoUnits.windowRadius)
         self.clip = LingmoClip(
             self.ctrlBg, radius=LingmoTheme.instance._roundWindowRadius
         )
         self.rectBack = LingmoFrame(self.clip)
         self.setContent(content)
         self.setClickShadowChange(False)
-        self.focusRect = LingmoFocusRectangle(self.ctrlBg)
+        self.focusRect = LingmoFocusRectangle(self.clip)
         self.focusRect.setRadius(4)
-        self.rectBackWidth = self.clip.width() * self.progress
         self.rectBackHeight = 3
         self.widthAnimation = LingmoAnimation(self, "rectBackWidth")
         self.widthAnimation.setDuration(167)
@@ -2246,7 +2392,14 @@ class LingmoProgressButton(LingmoButton):
         )
         self.heightAnimation2 = LingmoAnimation(self, "rectBackHeight")
         self.heightAnimation2.setDuration(167)
-
+        self.heightAnimation.addAnimation(self.heightAnimation1)
+        self.heightAnimation.addAnimation(self.heightAnimation2)
+        self.clip.resize(self.ctrlBg.size())
+        self.rectBackWidth = (self.ctrlBg.width() - 2 * self.horizontalPadding )* self.progress
+        self.rectBackLOffset=0
+        self.rectBackROffset=0
+        self.rectBackTOffset=0
+        self.rectBackBOffset=0
     def updateEvent(self):
         try:
             if self.checked():
@@ -2330,11 +2483,15 @@ class LingmoProgressButton(LingmoButton):
             self.ctrlBg.move(self.horizontalPadding, self.verticalPadding)
             self.ctrlBg.setBorderWidth(0 if self.checked() else 1)
             self.ctrlBg.setColor(self.bgColor)
-            self.rectBack.resize(self.rectBackWidth, self.rectBackHeight)
+            self.rectBack.resize(self.rectBackWidth-self.rectBackLOffset-self.rectBackROffset, 
+                                self.rectBackHeight-self.rectBackTOffset-self.rectBackBOffset)
+            self.rectBackLOffset=max(0,LingmoUnits.windowRadius-self.rectBackHeight)
+            self.rectBack.move(self.rectBackLOffset,self.clip.height()-self.rectBack.height())
             self.rectBack.setVisible(not self.checked())
             self.rectBack.addStyleSheet(
                 "background-color", LingmoTheme.instance.primaryColor
             )
+            self.rectBack.addStyleSheet('border-bottom-left-radius',min(self.rectBackHeight,LingmoUnits.windowRadius))
         except:
             pass
 
@@ -2360,6 +2517,16 @@ class LingmoProgressButton(LingmoButton):
 
 
 class LingmoPopup(LingmoFrame):
+    def __init__(
+        self
+    ):
+        pass
+    
+    def updateEvent(self):
+        pass
+
+
+class LingmoCustomDialog(LingmoPopup):
     def __init__(
         self
     ):
@@ -2452,6 +2619,7 @@ class LingmoProgressRing(LingmoFrame):
         pen.setWidth(self.strokeWidth / 6 * 7)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if self.indeterminate:
             painter.drawArc(
                 self.strokeWidth / 2,
@@ -4020,7 +4188,7 @@ class LingmoToolSeparator(LingmoFrame):
         pass
 
 
-class Tumbler(LingmoFrame):
+class LingmoTumbler(LingmoFrame):
     def __init__(
         self
     ):
