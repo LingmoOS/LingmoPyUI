@@ -102,6 +102,11 @@ class ExampleApp:
             self.dropDownBox.addItem(item)
         a += 40
 
+        self.checkbox = LingmoPyUI.LingmoCheckBox(self.frame,content='CheckBox')
+        self.checkbox.move(200,a)
+
+        a+=40
+
         self.progressButton.pressed.connect(
             lambda: self.window.showSuccess("This is all the widgets", 1500, "OK")
         )

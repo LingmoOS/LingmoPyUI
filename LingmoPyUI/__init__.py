@@ -760,6 +760,8 @@ class LingmoButton(LingmoFrame):
 class LingmoCheckBox(LingmoFrame):
     def __init__(
         self,
+        parent=None,
+        show=True,
         content='',
         textRight=True,
         textSpacing=6,
@@ -768,7 +770,7 @@ class LingmoCheckBox(LingmoFrame):
         animationEnabled=LingmoTheme.instance._animationEnabled,
         indeterminate=False
     ):
-        super().__init__(self)
+        super().__init__(parent,show)
         self.content=content
         self.textRight=textRight
         self.textSpacing=textSpacing
@@ -782,7 +784,12 @@ class LingmoCheckBox(LingmoFrame):
         self.iconFrame.addStyleSheet('border-width',1)
         self.iconFrame.addStyleSheet('border-style','solid')
         self.iconFrame.addStyleSheet('border-radius',self.size_/2)
+        self.indeterminateIcon=LingmoIcon(LingmoIconDef.CheckboxIndeterminate,parent=self,iconSize=14)
+        self.checkedIcon=LingmoIcon(LingmoIconDef.AcceptMedium,parent=self,iconSize=14)
         self.text=LingmoText(self,text=content)
+        self.text.pressed.connect(self.pressed.emit)
+        self.indeterminateIcon.pressed.connect(self.pressed.emit)
+        self.checkedIcon.pressed.connect(self.pressed.emit)
     def updateEvent(self):
         try:
             self.borderNormalColor=(
@@ -871,6 +878,16 @@ class LingmoCheckBox(LingmoFrame):
                     self.color=self.hoverColor
                 else:
                     self.color=self.normalColor
+            self.iconFrame.addStyleSheet('border-color',self.borderColor)
+            self.iconFrame.addStyleSheet('background-color',self.color)
+            self.indeterminateIcon.move(self.iconFrame.width()/2-self.indeterminateIcon.width()/2,
+                                        self.iconFrame.height()/2-self.indeterminateIcon.height()/2)
+            self.checkedIcon.move(self.iconFrame.width()/2-self.checkedIcon.width()/2,
+                                        self.iconFrame.height()/2-self.checkedIcon.height()/2)
+            self.indeterminateIcon.setIconColor(QColor(0,0,0,255)if LingmoTheme.instance.dark() else QColor(255,255,255,255))
+            self.checkedIcon.setIconColor(QColor(0,0,0,255)if LingmoTheme.instance.dark() else QColor(255,255,255,255))
+            self.indeterminateIcon.setVisible(self.indeterminate)
+            self.checkedIcon.setVisible(self.checked and (not self.indeterminate))
             self.adjustSize()
         except:
             pass
