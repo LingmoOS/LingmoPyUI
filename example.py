@@ -111,6 +111,13 @@ class ExampleApp:
         self.delayButton.move(200,a)
         a+=40
 
+        self.filledIconButton1=LingmoPyUI.LingmoFilledIconButton(self.frame,iconSource=LingmoPyUI.LingmoIconDef.AddBold,iconSize=32,content='FilledIconButton')
+        self.filledIconButton1.setSize(64,64)
+        self.filledIconButton1.setRadius(32)
+        self.filledIconButton1.move(200,a)
+        a+=40
+        
+
         self.progressButton.pressed.connect(
             lambda: self.window.showSuccess("This is all the widgets", 1500, "OK")
         )

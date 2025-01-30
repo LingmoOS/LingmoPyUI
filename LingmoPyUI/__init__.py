@@ -946,7 +946,7 @@ class LingmoControlBackground(LingmoFrame):
 
     def updateEvent(self):
         try:
-            self.rectBack.addStyleSheet("border-radius", self.radius)
+            self.rectBack.addStyleSheet("border-radius", min(self.radius,self.rectBack.width()/2))
             self.rectBack.addStyleSheet("background-color", self.color)
             self.rectBack.setGeometry(
                 self.borderWidths[0],
@@ -1304,6 +1304,7 @@ class LingmoFilledButton(LingmoFrame):
         self.contentText.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.contentText.setFont(self.font())
         self.contentText.pressed.connect(self.pressed.emit)
+        self.background.setRadius(LingmoTheme.instance._roundWindowRadius)
 
     def updateEvent(self):
         try:
@@ -1318,7 +1319,6 @@ class LingmoFilledButton(LingmoFrame):
                 self.bgColor = self.disableColor
             self.contentText.setColor(self.textColor)
             self.background.setColor(self.bgColor)
-            self.background.setRadius(LingmoTheme.instance._roundWindowRadius)
             self.background.setBorderWidth(1 if self.isEnabled() else 0)
             self.background.setBorderColor(
                 self.normalColor.darker(120) if self.isEnabled() else self.disableColor
@@ -1329,16 +1329,100 @@ class LingmoFilledButton(LingmoFrame):
                 self.width() / 2 - self.contentText.width() / 2,
                 self.height() / 2 - self.contentText.height() / 2,
             )
+            self.resize(self.horizontalPaddding*2+self.background.width(),
+            self.verticalPadding*2+self.background.height())
+            self.background.move(self.width()/2-self.background.width()/2,
+                                self.height()/2-self.background.height()/2)
         except:
             pass
 
+    def setContent(self,val):
+        self.content=val
+    def setRadius(self,val):
+        self.background.setRadius(val)
+    def setSize(self,width,height):
+        self.background.resize(width,height)
+
 
 class LingmoFilledIconButton(LingmoFilledButton):
-    def __init__(self, parent=None, show=True, content=""):
+    IconOnly = Qt.ToolButtonStyle.ToolButtonIconOnly
+    TextOnly = Qt.ToolButtonStyle.ToolButtonTextOnly
+    TextUnderIcon = Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+    TextBesideIcon = Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+    def __init__(self, parent=None, show=True, iconSource=None, iconSize=20, content=''):
         super().__init__(parent, show, content)
-    
+        self.display=self.IconOnly
+        self.icon=LingmoIcon(iconSource,self,iconSize=iconSize,autoAdjust=True)
+        self.tooltip=LingmoToolTip(self,content=self.content,interval=1000)
+        self.setDisplay(self.display)
+        self.horizontalPaddding=8
+        self.verticalPadding=8
+        self.background.setRadius(LingmoUnits.smallRadius)
     def updateEvent(self):
-        return super().updateEvent()
+        try:
+            self.tooltip.setDisabled(self.content=='' or self.display!=self.IconOnly)
+            if self.isEnabled():
+                if self.isPressed():
+                    self.bgColor = self.pressedColor
+                elif self.isHovered():
+                    self.bgColor = self.hoverColor
+                else:
+                    self.bgColor = self.normalColor
+            else:
+                self.bgColor = self.disableColor
+            self.contentText.setColor(self.textColor)
+            self.background.setColor(self.bgColor)
+            self.background.setBorderWidth(1 if self.isEnabled() else 0)
+            self.background.setBorderColor(
+                self.normalColor.darker(120) if self.isEnabled() else self.disableColor
+            )
+            self.focusRect.setVisible(self.hasFocus())
+            self.contentText.setText(self.content)
+            self.tooltip.setContent(self.content)
+            if self.isEnabled():
+                self.iconColor=QColor(255,255,255,255)
+            else:
+                self.iconColor=QColor(130,130,130,255)
+            self.icon.setIconColor(self.iconColor)
+            if self.display==self.TextOnly:
+                self.contentText.move(
+                    self.width() / 2 - self.contentText.width() / 2,
+                    self.height() / 2 - self.contentText.height() / 2,
+                )
+            elif self.display==self.IconOnly:
+                self.icon.move(
+                    self.width() / 2 - self.icon.width() / 2,
+                    self.height() / 2 - self.icon.height() / 2,
+                )
+            elif self.display==self.TextBesideIcon:
+                self.icon.move(
+                    self.width() / 2 - (self.icon.width()+self.contentText.width()) / 2,
+                    self.height() / 2 - self.icon.height() / 2,
+                )
+                self.contentText.move(
+                    self.icon.x() + self.icon.width(),
+                    self.height() / 2 - self.contentText.height() / 2,
+                )
+            elif self.display==self.TextUnderIcon:
+                self.icon.move(
+                    self.width() / 2 - self.icon.width() / 2,
+                    self.height() / 2 - (self.icon.height()+self.contentText.height()) / 2,
+                )
+                self.contentText.move(
+                    self.width() / 2 - self.contentText.width() / 2,
+                    self.icon.y()+self.icon.height()
+                )
+            self.resize(self.horizontalPaddding*2+self.background.width(),
+            self.verticalPadding*2+self.background.height())
+            self.background.move(self.width()/2-self.background.width()/2,
+                                self.height()/2-self.background.height()/2)
+        except:
+            pass
+
+    def setDisplay(self,val):
+        self.contentText.setVisible(val!=self.IconOnly)
+        self.icon.setVisible(val!=self.TextOnly)
+        self.display=val
 
 
 class LingmoFocusRectangle(LingmoFrame):
