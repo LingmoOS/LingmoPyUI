@@ -383,18 +383,18 @@ class LingmoAppBar(LingmoFrame):
             )
         else:
             self.btnMinimize = LingmoIconButton(
-                LingmoIconDef.ChromeMinimize,
+                LingmoIconDef.ChevronDown,
                 parent=self,
-                iconSize=11,
+                iconSize=14,
                 content=self.minimizeText,
                 normalColor=self.minimizeNormalColor,
                 hoverColor=self.minimizeHoverColor,
                 pressedColor=self.minimizePressColor,
             )
             self.btnMaximize = LingmoIconButton(
-                LingmoIconDef.ChromeMaximize,
+                LingmoIconDef.FullScreen,
                 parent=self,
-                iconSize=11,
+                iconSize=14,
                 content=self.maximizeText,
                 normalColor=self.maximizeNormalColor,
                 hoverColor=self.maximizeHoverColor,
@@ -531,9 +531,9 @@ class LingmoAppBar(LingmoFrame):
                 )
             if not LingmoTools.isMacos():
                 self.btnMaximize.setIconSource(
-                    LingmoIconDef.ChromeRestore
+                    LingmoIconDef.BackToWindow
                     if self.isRestore()
-                    else LingmoIconDef.ChromeMaximize
+                    else LingmoIconDef.FullScreen
                 )
                 self.btnMaximize.setContent(
                     self.restoreText if self.isRestore() else self.maximizeText
@@ -2604,7 +2604,7 @@ class LingmoPopup(LingmoFrame):
     def __init__(
         self
     ):
-        pass
+        super().__init__()
     
     def updateEvent(self):
         pass
@@ -2614,7 +2614,7 @@ class LingmoCustomDialog(LingmoPopup):
     def __init__(
         self
     ):
-        pass
+        super().__init__()
     
     def updateEvent(self):
         pass
@@ -3324,7 +3324,7 @@ class LingmoTextBox(LingmoFrame):
     def __init__(
         self
     ):
-        pass
+        super().__init__()
     
     def updateEvent(self):
         pass
@@ -3334,7 +3334,7 @@ class LingmoTextBoxBackground(LingmoFrame):
     def __init__(
         self
     ):
-        pass
+        super().__init__()
     
     def updateEvent(self):
         pass
@@ -3344,7 +3344,7 @@ class LingmoTextBoxMenu(LingmoFrame):
     def __init__(
         self
     ):
-        pass
+        super().__init__()
     
     def updateEvent(self):
         pass
@@ -3857,436 +3857,3 @@ class LingmoWindow(LingmoFrame):
     def cancelLoading(self):
         if self.cancel:
             self.hideLoading()
-
-
-class LingmoBusyIndicator(LingmoFrame):
-    def __init__(
-        self,
-        running=True
-    ):
-        self.running=running
-        self.ring=LingmoProgressRing()
-    
-    def updateEvent(self):
-        self.ring.setStrokeWidth(
-            3 if self.ring.width() > 40 else 4
-        )
-        self.ring.setVisible(self.running)
-        self.ring.resize(
-            max(self.width(),self.height()),
-            max(self.width(),self.height())
-        )
-        self.ring.move(
-            self.width() / 2 - self.ring.width() / 2,
-            self.height() / 2 - self.ring.width() / 2
-        )
-
-
-class LingmoCheckDelegate(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoCheckIndicator(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoComboBox(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoDial(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoDialog(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoDialogButtonBox(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoDrawer(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoGroupBox(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoHorizontalHeaderView(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoItemDelegate(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoMenuBar(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoMenuBarItem(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoMenuSeparator(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoPage(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoPageIndicator(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoPane(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoProgressBar(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoRadioButton(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoRadioDelegate(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoRadioIndicator(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoRangeSlider(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoRoundButton(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoScrollIndicator(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoScrollView(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoSelectionRectangle(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoSpinBox(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoSplitView(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoStackView(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoSwipeDelegate(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoSwitch(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoSwitchDelegate(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoSwitchIndicator(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoTabBar(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoTabButton(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoTextArea(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoTextField(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoToolBar(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoToolButton(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoToolSeparator(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoTumbler(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
-
-
-class LingmoVerticalHeaderView(LingmoFrame):
-    def __init__(
-        self
-    ):
-        pass
-    
-    def updateEvent(self):
-        pass
