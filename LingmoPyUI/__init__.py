@@ -660,28 +660,31 @@ class LingmoBadge(LingmoFrame):
         self.text=LingmoText(self)
 
     def updateEvent(self):
-        self.addStyleSheet('background-color',QColor(255,77,79,255))
-        self.addStyleSheet('border-radius',(5 if self.isDot else 10))
-        self.addStyleSheet('border-style','solid')
-        self.addStyleSheet('border-width',1)
-        self.addStyleSheet('border-color',QColor(255,255,255,255))
-        backgroundWidth=40
-        if self.isDot:
-            backgroundWidth=10
-        elif self.count<10:
-            backgroundWidth=20
-        elif self.count<100:
-            backgroundWidth=30
-        self.resize(backgroundWidth,(10 if self.isDot else 20))
-        if self.parent_:
-            if self.topRight:
-                self.move(self.parent_.x()+self.parent_.width()-2.5,self.parent_.y()-2.5)
-            else:
-                self.move(self.parent_.x()+self.parent_.width()-self.width()/2,self.parent_.y()-10)
-        self.text.move(self.width()/2-self.text.width()/2,self.height()/2-self.text.height()/2)
-        self.text.setColor(QColor(255,255,255,255))
-        self.text.setVisible(not self.isDot)
-        self.text.setText(str(self.count) if self.count<100 else '100+')
+        try:
+            self.addStyleSheet('background-color',QColor(255,77,79,255))
+            self.addStyleSheet('border-radius',(5 if self.isDot else 10))
+            self.addStyleSheet('border-style','solid')
+            self.addStyleSheet('border-width',1)
+            self.addStyleSheet('border-color',QColor(255,255,255,255))
+            backgroundWidth=40
+            if self.isDot:
+                backgroundWidth=10
+            elif self.count<10:
+                backgroundWidth=20
+            elif self.count<100:
+                backgroundWidth=30
+            self.resize(backgroundWidth,(10 if self.isDot else 20))
+            if self.parent_:
+                if self.topRight:
+                    self.move(self.parent_.x()+self.parent_.width()-2.5,self.parent_.y()-2.5)
+                else:
+                    self.move(self.parent_.x()+self.parent_.width()-self.width()/2,self.parent_.y()-10)
+            self.text.move(self.width()/2-self.text.width()/2,self.height()/2-self.text.height()/2)
+            self.text.setColor(QColor(255,255,255,255))
+            self.text.setVisible(not self.isDot)
+            self.text.setText(str(self.count) if self.count<100 else '100+')
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -967,6 +970,10 @@ class LingmoContorl(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -1256,6 +1263,10 @@ class LingmoDivider(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -2529,6 +2540,10 @@ class LingmoNavigationView(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -2541,6 +2556,10 @@ class LingmoPage(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -2553,6 +2572,10 @@ class LingmoPanelItem(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -2565,6 +2588,10 @@ class LingmoPanelItemEmpty(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -2577,6 +2604,10 @@ class LingmoPanelItemExpand(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -2589,6 +2620,10 @@ class LingmoPanelItemHeader(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
@@ -2601,6 +2636,10 @@ class LingmoPanelItemSeparator(LingmoFrame):
         super().__init__(parent, show)
     
     def updateEvent(self):
+        try:
+            pass
+        except:
+            pass
         return super().updateEvent()
 
 
