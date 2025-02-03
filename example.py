@@ -117,6 +117,7 @@ class ExampleApp:
         self.filledIconButton1.move(200,a)
         a+=40
         
+        self.badge=LingmoPyUI.LingmoBadge(self.filledButton,count=10)
 
         self.progressButton.pressed.connect(
             lambda: self.window.showSuccess("This is all the widgets", 1500, "OK")
